@@ -42,3 +42,4 @@ bat-firmware/bat-firmware/bat-firmware/stm32.mak
 *.map
 *.manifest
 *.mol
+*.opensdf
