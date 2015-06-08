@@ -42,3 +42,17 @@ bat-firmware/bat-firmware/bat-firmware/stm32.mak
 *.map
 *.manifest
 *.mol
+*.opensdf
+vs-proj/vs-proj.sln
+*.bin
+*.elf
+*.log
+vs-proj/vs-proj/gcc_Debug.h
+vs-proj/vs-proj/gcc_Release.h
+vs-proj/vs-proj/LEDBlink.c
+vs-proj/vs-proj/Makefile
+vs-proj/vs-proj/stm32f4xx_hal_conf.h
+*.vgdbsettings
+vs-proj/vs-proj/vs-proj.vcxproj
+vs-proj/vs-proj/vs-proj.vcxproj.filters
+vs-proj/vs-proj/vs-proj.vcxproj.user
