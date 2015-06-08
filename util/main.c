@@ -163,29 +163,6 @@ int main (void)
 		roll = daq_Y.imuData[2];
 		pitch = daq_Y.imuData[1];
 		yaw = daq_Y.imuData[0];
-		daq_U.pwm5_1 = 10;
-		daq_U.pwm5_2 = 20;
-		daq_U.pwm5_3 = 30;
-		daq_U.di1 = true;
-		daq_U.di2 = true;
-		daq_U.di3 = true;
-		daq_U.di4 = true;
-		daq_U.di5 = true;
-		daq_U.di6 = true;
-		daq_U.di7 = true;
-		daq_U.di8 = true;
-		daq_U.di9 = true;
-		daq_U.di10 = true;
-		daq_U.di12 = true;
-		daq_U.di13 = true;
-		daq_U.di14 = true;
-		daq_U.di15 = true;
-		daq_Y.do1;
-		daq_Y.do2;
-		daq_Y.do3;
-		daq_Y.do4;
-		daq_Y.do5;
-		daq_Y.Estop;
 		
 	}	
 }
