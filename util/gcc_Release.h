@@ -1,4 +1,5 @@
 /*
+	DO NOT ADD THIS FILE TO YOUR PROJECT!!!!!!
 	This file is only used by IntelliSense (VisualStudio code suggestion system)
 	DO NOT INCLUDE THIS FILE FROM YOUR ACTUAL SOURCE FILES.
 	This file lists the preprocessor macros extracted from your GCC.
