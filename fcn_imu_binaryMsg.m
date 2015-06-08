@@ -1,3 +1,4 @@
+% By Alireza Ramezani, Champaign-IL
 function imuBinaryMsg = fcn_imu_binaryMsg
 imuBinaryMsg.serialPort = 1;
 imuBinaryMsg.devisor = 1;
