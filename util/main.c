@@ -82,6 +82,7 @@ void main_delay_us(unsigned long us);
 void main_delay_ms(unsigned long ms);
 void main_initialize_us_timer(void);
 
+void main_PWM_IC_init(void);
 /****************************************************
 SysTick_Handler function
 This handler is called every tick and schedules tasks
@@ -153,6 +154,8 @@ int main (void)
 
 	remainAutoReloadTimerLoopVal_S = autoReloadTimerLoopVal_S;//Set nb of loop to do
 
+	/* PWM Input Capture Initialization */
+	main_PWM_IC_init();
 
 	/* Infinite loop */
 	/* Real time from systickHandler */
@@ -163,9 +166,9 @@ int main (void)
 		roll = daq_Y.imuData[2];
 		pitch = daq_Y.imuData[1];
 		yaw = daq_Y.imuData[0];
-		daq_U.pwm5_1 = 10;
-		daq_U.pwm5_2 = 20;
-		daq_U.pwm5_3 = 30;
+		daq_U.pwm5_1 = 10; // Tim5-Ch1
+		daq_U.pwm5_2 = 20; // Tim5-Ch2
+		daq_U.pwm5_3 = 30; // Tim4-Ch1
 		daq_U.di1 = true;
 		daq_U.di2 = true;
 		daq_U.di3 = true;
@@ -249,7 +252,67 @@ void main_initialize_us_timer()
 	MAIN_TIM->CR1 = TIM_CR1_CEN;
 }
 
+/*******************************************************************************
+* Function Name  : main_PWM_IC_init
+* Input          : 
+* Output         : 
+* Return         : 
+* Description    : 
+*******************************************************************************/
 
+void main_PWM_IC_init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStructure;
+  NVIC_InitTypeDef NVIC_InitStructure;
+  TIM_ICInitTypeDef TIM_ICInitStructure;
+
+  /* TIM2 clock enable */
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+
+  /* GPIOB clock enable */
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
+  
+  /* TIM2 chennel2 configuration : PB.03 */
+  GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3;
+  GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP ;
+  GPIO_Init(GPIOB, &GPIO_InitStructure);
+  
+  /* Connect TIM pin to AF2 */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_TIM2);
+
+  /* Enable the TIM2 global Interrupt */
+  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
+  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&NVIC_InitStructure);
+
+  /*TIM2 Config*/
+  TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
+  TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
+  TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+  TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+  TIM_ICInitStructure.TIM_ICFilter = 0x0;
+
+  TIM_PWMIConfig(TIM2, &TIM_ICInitStructure);
+
+  /* Select the TIM2 Input Trigger: TI2FP2 */
+  TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
+
+  /* Select the slave Mode: Reset Mode */
+  TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Reset);
+  TIM_SelectMasterSlaveMode(TIM2,TIM_MasterSlaveMode_Enable);
+
+  /* TIM enable counter */
+  TIM_Cmd(TIM2, ENABLE);
+
+  /* Enable the CC2 Interrupt Request */
+  TIM_ITConfig(TIM2, TIM_IT_CC2, ENABLE);
+
+}
 
 /* File trailer for Real-Time Workshop generated code.
 *

@@ -42,6 +42,10 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+__IO uint16_t IC2Value = 0;
+__IO uint16_t DutyCycle = 0;
+__IO uint32_t Frequency = 0;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -145,6 +149,33 @@ void PendSV_Handler(void)
 /*  file (startup_stm32f429_439xx.s).  */
 /******************************************************************************/
 
+void TIM2_IRQHandler(void)
+{
+  RCC_ClocksTypeDef RCC_Clocks;
+  RCC_GetClocksFreq(&RCC_Clocks);
+
+  /* Clear TIM2 Capture compare interrupt pending bit */
+  TIM_ClearITPendingBit(TIM2, TIM_IT_CC2);
+
+  /* Get the Input Capture value */
+  IC2Value = TIM_GetCapture2(TIM2);
+
+  if (IC2Value != 0)
+  {
+    /* Duty cycle computation */
+    DutyCycle = (TIM_GetCapture1(TIM2) * 100) / IC2Value;
+
+    /* Frequency computation 
+       TIM2 counter clock = (RCC_Clocks.HCLK_Frequency) */
+
+    Frequency = (RCC_Clocks.HCLK_Frequency) / IC2Value;
+  }
+  else
+  {
+    DutyCycle = 0;
+    Frequency = 0;
+  }
+}
 /**
   * @}
   */ 
