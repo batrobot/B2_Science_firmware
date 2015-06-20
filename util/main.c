@@ -37,6 +37,7 @@
 #include "daq.h"
 #include "vn100/vn100.h"
 #include "rtwtypes.h"
+#include "lida_screw.h"
 
 /* DAQ and controller loop at 1.0 KHz */
 #define SAMPLE_TIME 0.1
@@ -81,8 +82,8 @@ static uint32_t remainAutoReloadTimerLoopVal_S = 1;
 void main_delay_us(unsigned long us);
 void main_delay_ms(unsigned long ms);
 void main_initialize_us_timer(void);
+void main_init_all();
 
-void main_PWM_IC_init(void);
 /****************************************************
 SysTick_Handler function
 This handler is called every tick and schedules tasks
@@ -121,46 +122,37 @@ Example of main :
 *****************************************************/
 int main (void)
 {
+	main_init_all();
 
-	/* Data initialization */
-	int_T i;
-	for (i=0;i<1;i++) {
-		OverrunFlags[i] = 0;
-	}
+	/* First Demo */
+	//screw_position_t screw_position;
+	expected_position = 50;
 
-	/* Clock has to be configured first*/
-	RCC_Configuration();
+	//PID_param_t PID_param;
+	PID_param.Kp = 0.005;
+	//PID_param.Kp = 0.01;
+	PID_param.Ki = 0;
+	PID_param.Kd = 0.001;
+	//PID_param.Kd = 0;
 
-	/* Initilaize the main application timer */
-	main_initialize_us_timer();
+	uint16_t compensate = 20;
+	uint16_t dead_band = 2;
+	uint16_t counter;
 
-	/* Model initialization call */
-	daq_initialize();
+	//PID_data_t PID_data;
+
+	daq_U.pwm5_3 = 0; // Tim4-Ch1
+	//PWM_IC_init();
+	MX_I2C_Init();
+	screw_init(&screw_position);
 	
-	/* Initilaize the vn100 application */
-	vn100_initialize_defaults();
-
-	/* Systick configuration and enable SysTickHandler interrupt */
-	float dt = SAMPLE_TIME;
-	if (SysTick_Config((uint32_t)(SystemCoreClock * dt))) {
-		autoReloadTimerLoopVal_S = 1;
-		do {
-			autoReloadTimerLoopVal_S++;
-		} while ((uint32_t)(SystemCoreClock * dt)/autoReloadTimerLoopVal_S >
-			SysTick_LOAD_RELOAD_Msk);
-
-		SysTick_Config((uint32_t)(SystemCoreClock * dt)/autoReloadTimerLoopVal_S);
-	}
-
-	remainAutoReloadTimerLoopVal_S = autoReloadTimerLoopVal_S;//Set nb of loop to do
-
-	/* PWM Input Capture Initialization */
-	main_PWM_IC_init();
-
 	/* Infinite loop */
 	/* Real time from systickHandler */
+	daq_U.pwm5_3 = 0; // Tim4-Ch1
+
 	while (1) 
 	{
+		/*
 		float roll, pitch, yaw;
 		
 		roll = daq_Y.imuData[2];
@@ -168,7 +160,7 @@ int main (void)
 		yaw = daq_Y.imuData[0];
 		daq_U.pwm5_1 = 10; // Tim5-Ch1
 		daq_U.pwm5_2 = 20; // Tim5-Ch2
-		daq_U.pwm5_3 = 30; // Tim4-Ch1
+		//daq_U.pwm5_3 = 30; // Tim4-Ch1
 		daq_U.di1 = true;
 		daq_U.di2 = true;
 		daq_U.di3 = true;
@@ -189,6 +181,68 @@ int main (void)
 		daq_Y.do4;
 		daq_Y.do5;
 		daq_Y.Estop;
+		*/
+		/*
+		if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0))
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			while(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0));
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+		}*/
+		
+		motor_control = PID_generic (PID_param, &PID_data, \
+						(int32_t)(screw_position.round*360 + screw_position.degree - screw_position.init_degree),\
+						(int32_t)(expected_position*screw_position.range/100));
+						
+		if(motor_control >= -dead_band && motor_control <= dead_band)
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = 0;
+			
+			//if(expected_position == 80)
+				//expected_position = 20;
+			//else if(expected_position == 20)
+				//expected_position = 80;
+		}
+		else if(motor_control > 0)
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = motor_control + compensate;
+		}
+		else if(motor_control < 0)
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = -motor_control + compensate;
+		}
+		
+
+		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_13))
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			screw_position.round = screw_position.range/360;
+			
+		}
+
+		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_14))
+		{
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			screw_position.round = 0;
+		}
+		
+		read_temp = MX_I2C_READ();
+		if(read_temp != 65535)
+		{
+			if((int)read_temp < (int)screw_position.degree-180)
+				screw_position.round ++;	
+			if(read_temp > 180+screw_position.degree)
+				screw_position.round --;
+			screw_position.degree = read_temp;
+		}
+		
+		//daq_U.pwm5_3 = compensate + 5; // Tim4-Ch1
+		//GPIO_ResetBits(GPIOD, GPIO_Pin_13);
+		//GPIO_ResetBits(GPIOD, GPIO_Pin_14);
+		//read_temp = MX_I2C_READ();
 		
 	}	
 }
@@ -253,67 +307,47 @@ void main_initialize_us_timer()
 }
 
 /*******************************************************************************
-* Function Name  : main_PWM_IC_init
+* Function Name  : main_init_all
 * Input          : 
-* Output         : 
+* Output         : None
 * Return         : 
 * Description    : 
 *******************************************************************************/
 
-void main_PWM_IC_init(void)
+void main_init_all()
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
-  NVIC_InitTypeDef NVIC_InitStructure;
-  TIM_ICInitTypeDef TIM_ICInitStructure;
+	/* Data initialization */
+	int_T i;
+	for (i=0;i<1;i++) {
+		OverrunFlags[i] = 0;
+	}
 
-  /* TIM2 clock enable */
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
+	/* Clock has to be configured first*/
+	RCC_Configuration();
 
-  /* GPIOB clock enable */
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOB, ENABLE);
-  
-  /* TIM2 chennel2 configuration : PB.03 */
-  GPIO_InitStructure.GPIO_Pin   = GPIO_Pin_3;
-  GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_UP ;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-  
-  /* Connect TIM pin to AF2 */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource3, GPIO_AF_TIM2);
+	/* Initilaize the main application timer */
+	main_initialize_us_timer();
 
-  /* Enable the TIM2 global Interrupt */
-  NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;
-  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-  NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-  NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_InitStructure);
+	/* Model initialization call */
+	daq_initialize();
+	
+	/* Initilaize the vn100 application */
+	vn100_initialize_defaults();
 
-  /*TIM2 Config*/
-  TIM_ICInitStructure.TIM_Channel = TIM_Channel_2;
-  TIM_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_Rising;
-  TIM_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
-  TIM_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
-  TIM_ICInitStructure.TIM_ICFilter = 0x0;
+	/* Systick configuration and enable SysTickHandler interrupt */
+	float dt = SAMPLE_TIME;
+	if (SysTick_Config((uint32_t)(SystemCoreClock * dt))) {
+		autoReloadTimerLoopVal_S = 1;
+		do {
+			autoReloadTimerLoopVal_S++;
+		} while ((uint32_t)(SystemCoreClock * dt)/autoReloadTimerLoopVal_S >
+			SysTick_LOAD_RELOAD_Msk);
 
-  TIM_PWMIConfig(TIM2, &TIM_ICInitStructure);
+		SysTick_Config((uint32_t)(SystemCoreClock * dt)/autoReloadTimerLoopVal_S);
+	}
 
-  /* Select the TIM2 Input Trigger: TI2FP2 */
-  TIM_SelectInputTrigger(TIM2, TIM_TS_TI2FP2);
-
-  /* Select the slave Mode: Reset Mode */
-  TIM_SelectSlaveMode(TIM2, TIM_SlaveMode_Reset);
-  TIM_SelectMasterSlaveMode(TIM2,TIM_MasterSlaveMode_Enable);
-
-  /* TIM enable counter */
-  TIM_Cmd(TIM2, ENABLE);
-
-  /* Enable the CC2 Interrupt Request */
-  TIM_ITConfig(TIM2, TIM_IT_CC2, ENABLE);
-
+	remainAutoReloadTimerLoopVal_S = autoReloadTimerLoopVal_S;//Set nb of loop to do
 }
-
 /* File trailer for Real-Time Workshop generated code.
 *
 * [EOF] main.c

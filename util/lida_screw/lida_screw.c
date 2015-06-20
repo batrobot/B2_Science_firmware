@@ -121,19 +121,25 @@ void screw_init(screw_position_t* position)
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 	GPIO_SetBits(GPIOD, GPIO_Pin_15);
-	daq_U.pwm5_3 = 80;
+	daq_U.pwm5_3 = 30;
 	
 	while(!GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_13));
 	daq_U.pwm5_3 = 0;
 	
-	while((read_temp = MX_I2C_READ()) == 65535);
+	while((read_temp = MX_I2C_READ()) == 65535)
+	{
+		MX_I2C_Init();
+	}
 	position->range = read_temp;
 	GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-	daq_U.pwm5_3 = 80;
+	daq_U.pwm5_3 = 30;
 	
 	while(!GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_14))
 	{
-		while((read_temp = MX_I2C_READ()) == 65535);
+		while((read_temp = MX_I2C_READ()) == 65535)
+		{
+			MX_I2C_Init();
+		}
 		if(read_temp > 180+position->degree)
 			position->range += 360;
 		position->degree = read_temp;
@@ -197,7 +203,7 @@ uint16_t MX_I2C_READ(void){
 
 	int counter = 0;
 	int FAILFLAG = 0;
-	int WAITTIME = 500;
+	int WAITTIME = 1000;
 
 	//Read Angle Information from I2C Registers
 	// Angle[6-13]
