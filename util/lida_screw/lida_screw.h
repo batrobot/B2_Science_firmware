@@ -24,7 +24,10 @@ typedef struct screw_position_t
 	uint16_t round;
 	uint16_t degree;
 	uint16_t init_degree;
+	uint32_t current_position;
 	uint32_t range;
+	uint16_t percentage;
+	uint16_t direction;
 } screw_position_t;
 
 int16_t PID_generic (PID_param_t param, PID_data_t* data, int32_t measured, int32_t expected);
@@ -39,5 +42,7 @@ PID_data_t PID_data;
 uint16_t expected_position; //in percentage
 int16_t motor_control; //duty cycle
 uint16_t read_temp;
+
+char Buff[100];
 
 #endif

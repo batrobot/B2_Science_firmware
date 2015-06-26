@@ -121,6 +121,7 @@ void screw_init(screw_position_t* position)
 	GPIO_Init(GPIOD, &GPIO_InitStructure);
 
 	GPIO_SetBits(GPIOD, GPIO_Pin_15);
+	
 	daq_U.pwm5_3 = 30;
 	
 	while(!GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_13));
@@ -132,7 +133,7 @@ void screw_init(screw_position_t* position)
 	}
 	position->range = read_temp;
 	GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-	daq_U.pwm5_3 = 30;
+	daq_U.pwm5_3 = 50;
 	
 	while(!GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_14))
 	{
@@ -144,11 +145,12 @@ void screw_init(screw_position_t* position)
 			position->range += 360;
 		position->degree = read_temp;
 	}
-	daq_U.pwm5_3 = 0;
+	daq_U.pwm5_3 = 50;
 	GPIO_SetBits(GPIOD, GPIO_Pin_15);
 	position->range -= position->degree;
 	position->round = 0;
 	position->init_degree = position->degree;
+	
 }
 
 /*******************************************************************************
