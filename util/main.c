@@ -38,9 +38,10 @@
 #include "vn100/vn100.h"
 #include "rtwtypes.h"
 #include "lida_screw.h"
+#include "debug.h"
 
 /* DAQ and controller loop at 1.0 KHz */
-#define SAMPLE_TIME 0.1
+#define SAMPLE_TIME 0.01
 
 /* Uncomment for debug msg over USART port */
 #define DEBUG_MAIN
@@ -106,6 +107,10 @@ void SysTick_Handler(void)
 
 	OverrunFlags[0] = true;
 
+	/* Functions here */
+	sprintf(Buff, "%.1f %d %d\r\n", daq_Y.time, screw_position.direction, screw_position.percentage);
+	debug_printf(Buff, 100);
+
 	/* Step the model for base rate */
 	daq_step();
 
@@ -132,8 +137,8 @@ int main (void)
 	PID_param.Kp = 0.005;
 	//PID_param.Kp = 0.01;
 	PID_param.Ki = 0;
-	PID_param.Kd = 0.001;
-	//PID_param.Kd = 0;
+	//PID_param.Kd = 0.001;
+	PID_param.Kd = 0;
 
 	uint16_t compensate = 20;
 	uint16_t dead_band = 2;
@@ -190,45 +195,6 @@ int main (void)
 			GPIO_SetBits(GPIOD, GPIO_Pin_15);
 		}*/
 		
-		motor_control = PID_generic (PID_param, &PID_data, \
-						(int32_t)(screw_position.round*360 + screw_position.degree - screw_position.init_degree),\
-						(int32_t)(expected_position*screw_position.range/100));
-						
-		if(motor_control >= -dead_band && motor_control <= dead_band)
-		{
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			daq_U.pwm5_3 = 0;
-			
-			//if(expected_position == 80)
-				//expected_position = 20;
-			//else if(expected_position == 20)
-				//expected_position = 80;
-		}
-		else if(motor_control > 0)
-		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
-			daq_U.pwm5_3 = motor_control + compensate;
-		}
-		else if(motor_control < 0)
-		{
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			daq_U.pwm5_3 = -motor_control + compensate;
-		}
-		
-
-		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_13))
-		{
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			screw_position.round = screw_position.range/360;
-			
-		}
-
-		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_14))
-		{
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
-			screw_position.round = 0;
-		}
-		
 		read_temp = MX_I2C_READ();
 		if(read_temp != 65535)
 		{
@@ -237,6 +203,51 @@ int main (void)
 			if(read_temp > 180+screw_position.degree)
 				screw_position.round --;
 			screw_position.degree = read_temp;
+		}
+		screw_position.current_position = (uint32_t)screw_position.round*360 + screw_position.degree - screw_position.init_degree;
+		screw_position.percentage = screw_position.current_position*100 / screw_position.range;
+
+		if(screw_position.current_position > 80*screw_position.range/100)
+			expected_position = 10;
+		if(screw_position.current_position < 20*screw_position.range/100)
+			expected_position = 90;
+		
+		motor_control = PID_generic (PID_param, &PID_data, \
+						(int32_t)screw_position.current_position,\
+						(int32_t)(expected_position*screw_position.range/100));
+						
+		if(motor_control >= -dead_band && motor_control <= dead_band)
+		{
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = 0;
+		}
+		else if(motor_control > 0)
+		{
+			screw_position.direction = 1;
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = motor_control + compensate;
+		}
+		else if(motor_control < 0)
+		{
+			screw_position.direction = 0;
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			daq_U.pwm5_3 = -motor_control + compensate;
+		}
+		
+
+		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_13))
+		{
+			screw_position.direction = 0;
+			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
+			screw_position.round = screw_position.range/360;
+			
+		}
+
+		if(GPIO_ReadInputDataBit(GPIOD,GPIO_Pin_14))
+		{
+			screw_position.direction = 1;
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			screw_position.round = 0;
 		}
 		
 		//daq_U.pwm5_3 = compensate + 5; // Tim4-Ch1
