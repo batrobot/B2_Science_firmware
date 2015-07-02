@@ -108,7 +108,7 @@ void SysTick_Handler(void)
 	OverrunFlags[0] = true;
 
 	/* Functions here */
-	sprintf(Buff, "%.1f %d %d\r\n", daq_Y.time, screw_position.direction, screw_position.percentage);
+	sprintf(Buff, "%.1f %d %d %d\r\n", daq_Y.time, screw_position.percentage, expected_position, motor_control);
 	debug_printf(Buff, 100);
 
 	/* Step the model for base rate */
@@ -127,25 +127,23 @@ Example of main :
 *****************************************************/
 int main (void)
 {
-	main_init_all();
-
-	/* First Demo */
-	//screw_position_t screw_position;
-	expected_position = 50;
-
 	//PID_param_t PID_param;
-	PID_param.Kp = 0.005;
-	//PID_param.Kp = 0.01;
+	PID_param.Kp = 0.03;
+	//PID_param.Kp = 0.005;
 	PID_param.Ki = 0;
 	//PID_param.Kd = 0.001;
 	PID_param.Kd = 0;
 
-	uint16_t compensate = 20;
-	uint16_t dead_band = 2;
-	uint16_t counter;
+	compensate = 20;
+	dead_band = 0;
+	uint32_t counter = 0;
+	uint16_t state = 0;
+	uint16_t period = 5;
+	increment = 2;
 
-	//PID_data_t PID_data;
+	main_init_all();
 
+	/* First Demo */
 	daq_U.pwm5_3 = 0; // Tim4-Ch1
 	//PWM_IC_init();
 	MX_I2C_Init();
@@ -154,47 +152,47 @@ int main (void)
 	/* Infinite loop */
 	/* Real time from systickHandler */
 	daq_U.pwm5_3 = 0; // Tim4-Ch1
+	main_delay_ms(1000);
+	state = 1;
 
 	while (1) 
-	{
-		/*
-		float roll, pitch, yaw;
-		
-		roll = daq_Y.imuData[2];
-		pitch = daq_Y.imuData[1];
-		yaw = daq_Y.imuData[0];
-		daq_U.pwm5_1 = 10; // Tim5-Ch1
-		daq_U.pwm5_2 = 20; // Tim5-Ch2
-		//daq_U.pwm5_3 = 30; // Tim4-Ch1
-		daq_U.di1 = true;
-		daq_U.di2 = true;
-		daq_U.di3 = true;
-		daq_U.di4 = true;
-		daq_U.di5 = true;
-		daq_U.di6 = true;
-		daq_U.di7 = true;
-		daq_U.di8 = true;
-		daq_U.di9 = true;
-		daq_U.di10 = true;
-		daq_U.di12 = true;
-		daq_U.di13 = true;
-		daq_U.di14 = true;
-		daq_U.di15 = true;
-		daq_Y.do1;
-		daq_Y.do2;
-		daq_Y.do3;
-		daq_Y.do4;
-		daq_Y.do5;
-		daq_Y.Estop;
-		*/
-		/*
-		if(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0))
+	{	
+		if(state == 1)
 		{
-			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
-			while(GPIO_ReadInputDataBit(GPIOA,GPIO_Pin_0));
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
-		}*/
-		
+			counter++;
+			if(counter >= period)
+			{
+				expected_position += increment;
+				counter = 0;
+				if(expected_position == 20)
+					state = 2;
+			}
+		}
+
+		else if(state == 2)
+		{
+			counter++;
+			if(counter >= period)
+			{
+				expected_position += increment;
+				counter = 0;
+				if(expected_position == 80)
+					state = 3;
+			}
+		}
+
+		else if(state == 3)
+		{
+			counter++;
+			if(counter >= period)
+			{
+				expected_position -= increment;
+				counter = 0;
+				if(expected_position == 20)
+					state = 2;
+			}
+		}
+
 		read_temp = MX_I2C_READ();
 		if(read_temp != 65535)
 		{
@@ -207,15 +205,15 @@ int main (void)
 		screw_position.current_position = (uint32_t)screw_position.round*360 + screw_position.degree - screw_position.init_degree;
 		screw_position.percentage = screw_position.current_position*100 / screw_position.range;
 
-		if(screw_position.current_position > 80*screw_position.range/100)
-			expected_position = 10;
-		if(screw_position.current_position < 20*screw_position.range/100)
-			expected_position = 90;
+		//if(screw_position.current_position > 80*screw_position.range/100)
+		//	expected_position = 10;
+		//if(screw_position.current_position < 20*screw_position.range/100)
+		//	expected_position = 90;
 		
 		motor_control = PID_generic (PID_param, &PID_data, \
 						(int32_t)screw_position.current_position,\
 						(int32_t)(expected_position*screw_position.range/100));
-						
+
 		if(motor_control >= -dead_band && motor_control <= dead_band)
 		{
 			GPIO_ResetBits(GPIOD, GPIO_Pin_15);
@@ -249,12 +247,6 @@ int main (void)
 			GPIO_SetBits(GPIOD, GPIO_Pin_15);
 			screw_position.round = 0;
 		}
-		
-		//daq_U.pwm5_3 = compensate + 5; // Tim4-Ch1
-		//GPIO_ResetBits(GPIOD, GPIO_Pin_13);
-		//GPIO_ResetBits(GPIOD, GPIO_Pin_14);
-		//read_temp = MX_I2C_READ();
-		
 	}	
 }
 

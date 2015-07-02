@@ -35,7 +35,7 @@ void screw_init(screw_position_t* position);
 void MX_I2C_Init();
 uint16_t MX_I2C_READ();
 
-//global variables for testing
+/* global variables for testing */
 screw_position_t screw_position;
 PID_param_t PID_param;
 PID_data_t PID_data;
@@ -43,6 +43,13 @@ uint16_t expected_position; //in percentage
 int16_t motor_control; //duty cycle
 uint16_t read_temp;
 
+uint16_t compensate;
+uint16_t dead_band;
+
 char Buff[100];
+uint32_t counter;
+uint16_t state;
+uint16_t period;
+uint16_t increment;
 
 #endif
