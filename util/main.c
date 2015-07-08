@@ -32,14 +32,16 @@
 */
 
 #include <stdio.h>
+#include "VN_lib.h"
+#include "VN_user.h"
 #include "stddef.h"
 #include "stm32f4xx.h"
 #include "daq.h"
-#include "vn100/vn100.h"
 #include "rtwtypes.h"
+#include "debug.h"
 
 /* DAQ and controller loop at 1.0 KHz */
-#define SAMPLE_TIME 0.1
+#define SAMPLE_TIME 0.05
 
 /* Uncomment for debug msg over USART port */
 #define DEBUG_MAIN
@@ -106,7 +108,23 @@ void SysTick_Handler(void)
 
 	/* Step the model for base rate */
 	daq_step();
+	
+	/* vn100 read yaw, pitch, and roll */
+	VN100_SPI_Packet *packet;
+	float yaw, pitch, roll;
+	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
 
+	char Buff [] = "                                                                     \r\n\0";
+	const char *tmpBuff = "roll = %f, pitch = %f, yaw = %f";
+	sprintf(Buff, tmpBuff,roll,pitch,yaw);
+	debug_printf(Buff, 72);
+	
+	
+	/* servo actuators*/
+	daq_U.pwm5_1 = 10;    
+	daq_U.pwm5_2 = 20;
+	
+	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;
 }
@@ -137,7 +155,8 @@ int main (void)
 	daq_initialize();
 	
 	/* Initilaize the vn100 application */
-	vn100_initialize_defaults();
+	//vn100_initialize_defaults();
+	SPI_initialize();	// vn100 spi initialization ...
 
 	/* Systick configuration and enable SysTickHandler interrupt */
 	float dt = SAMPLE_TIME;
@@ -158,12 +177,13 @@ int main (void)
 	/* Real time from systickHandler */
 	while (1) 
 	{
-		float roll, pitch, yaw;
+		/* Get the sensor model */
+		//VN100_SPI_Packet *packet;
+		//char model[12];
+		//packet = VN100_SPI_GetModel(0, model);
 		
-		roll = daq_Y.imuData[2];
-		pitch = daq_Y.imuData[1];
-		yaw = daq_Y.imuData[0];
 		
+		//
 	}	
 }
 
