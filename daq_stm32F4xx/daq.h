@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.18
+ * Model version      : 1.40
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Jun 07 16:10:57 2015
+ * C/C++ source code generated on  : Tue Jun 23 20:05:13 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -56,23 +56,18 @@
 
 /* Block signals (auto storage) */
 typedef struct {
-  uint16_T USART_Send4_m;              /* '<S11>/USART_Send4' */
+  uint16_T USART_Send4_m;              /* '<S10>/USART_Send4' */
   uint16_T GPIO_Read1;                 /* '<S6>/GPIO_Read1' */
   uint16_T GPIO_Read2;                 /* '<S6>/GPIO_Read2' */
   uint16_T GPIO_Read4;                 /* '<S6>/GPIO_Read4' */
   uint16_T GPIO_Read5;                 /* '<S6>/GPIO_Read5' */
 } B_daq;
 
-/* Block states (auto storage) for system '<Root>' */
-typedef struct {
-  real32_T UnitDelay_DSTATE[3];        /* '<S9>/Unit Delay' */
-} DW_daq;
-
 /* External inputs (root inport signals with auto storage) */
 typedef struct {
   int16_T pwm5_1;                      /* '<Root>/pwm5_1' */
   int16_T pwm5_2;                      /* '<Root>/pwm5_2' */
-  int16_T pwm5_3;                      /* '<Root>/pwm5_3' */
+  real_T pwm5_3;                       /* '<Root>/pwm5_3' */
   uint16_T usart1_Nb2Send;             /* '<Root>/usart1_Nb2Send' */
   uint8_T usart1_SendVal[1000];        /* '<Root>/usart1_SendVal' */
   uint16_T usart3_Nb2Send;             /* '<Root>/usart3_Nb2Send' */
@@ -103,7 +98,7 @@ typedef struct {
   real_T time;                         /* '<Root>/time' */
   uint16_T usart1_NbSent;              /* '<Root>/	usart1_NbSent' */
   real_T usart1_NbRcv;                 /* '<Root>/usart1_NbRcv' */
-  uint8_T usart1_RcvVal[18];           /* '<Root>/usart1_RcvVal' */
+  uint8_T usart1_RcvVal[500];          /* '<Root>/usart1_RcvVal' */
   uint16_T usart3_NbSent;              /* '<Root>/	usart3_NbSent' */
   real_T usart3_NbRcv;                 /* '<Root>/usart3_NbRcv' */
   uint8_T usart3_RcvVal[100];          /* '<Root>/usart3_RcvVal' */
@@ -118,7 +113,7 @@ typedef struct {
   real_T do3;                          /* '<Root>/do3' */
   real_T do4;                          /* '<Root>/do4' */
   real_T do5;                          /* '<Root>/do5' */
-  real32_T imuData[3];                 /* '<Root>/imuData' */
+  real_T imuData;                      /* '<Root>/imuData' */
   real_T usart2_NbRcv;                 /* '<Root>/usart2_NbRcv' */
   uint8_T usart2_RcvVal[18];           /* '<Root>/usart2_RcvVal' */
 } ExtY_daq;
@@ -130,9 +125,6 @@ struct P_daq_ {
                                         */
   real_T pwm5_freq_Value;              /* Expression: 1000
                                         * Referenced by: '<S2>/pwm5_freq'
-                                        */
-  real32_T UnitDelay_InitialCondition; /* Computed Parameter: UnitDelay_InitialCondition
-                                        * Referenced by: '<S9>/Unit Delay'
                                         */
 };
 
@@ -155,9 +147,6 @@ extern P_daq daq_P;
 
 /* Block signals (auto storage) */
 extern B_daq daq_B;
-
-/* Block states (auto storage) */
-extern DW_daq daq_DW;
 
 /* External inputs (root inport signals with auto storage) */
 extern ExtU_daq daq_U;
@@ -195,12 +184,10 @@ extern RT_MODEL_daq *const daq_M;
  * '<S6>'   : 'daq/DAQ/GPIO'
  * '<S7>'   : 'daq/DAQ/PWM'
  * '<S8>'   : 'daq/DAQ/USART'
- * '<S9>'   : 'daq/DAQ/imuDataParse'
- * '<S10>'  : 'daq/DAQ/USART/USART1'
- * '<S11>'  : 'daq/DAQ/USART/USART2'
- * '<S12>'  : 'daq/DAQ/USART/USART3'
- * '<S13>'  : 'daq/DAQ/USART/USART6'
- * '<S14>'  : 'daq/DAQ/imuDataParse/parse_imu'
+ * '<S9>'   : 'daq/DAQ/USART/USART1'
+ * '<S10>'  : 'daq/DAQ/USART/USART2'
+ * '<S11>'  : 'daq/DAQ/USART/USART3'
+ * '<S12>'  : 'daq/DAQ/USART/USART6'
  */
 #endif                                 /* RTW_HEADER_daq_h_ */
 

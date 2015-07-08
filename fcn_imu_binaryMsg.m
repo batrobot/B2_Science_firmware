@@ -10,10 +10,10 @@ imuBinaryMsg.msgType.Ypr = true;
 imuBinaryMsg.msgType.Qtn = false;
 imuBinaryMsg.msgType.AngRate = false;
 imuBinaryMsg.msgType.Pos = false;
-imuBinaryMsg.msgType.Vel = false;
-imuBinaryMsg.msgType.Accel = false;
+imuBinaryMsg.msgType.Vel = true;
+imuBinaryMsg.msgType.Accel = true;
 imuBinaryMsg.msgType.Imu = false;
-imuBinaryMsg.msgType.Magpres = false;
+imuBinaryMsg.msgType.Magpres = true;
 
 % Size(Byte)
 imuBinaryMsg.msgType.size.timeStartup = 8;
