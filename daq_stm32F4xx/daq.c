@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.18
+ * Model version      : 1.40
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Jun 07 16:10:57 2015
+ * C/C++ source code generated on  : Tue Jun 23 20:05:13 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -32,8 +32,8 @@
 
 #include "daq.h"
 #include "daq_private.h"
-#define USART1_RX_BUFF_SIZE            18
-#define USART1_RX_STRING_SIZE          18
+#define USART1_RX_BUFF_SIZE            500
+#define USART1_RX_STRING_SIZE          500
 #define USART3_RX_BUFF_SIZE            1000
 #define USART3_RX_STRING_SIZE          100
 #define USART6_RX_BUFF_SIZE            1000
@@ -41,17 +41,17 @@
 #define USART2_RX_BUFF_SIZE            18
 #define USART2_RX_STRING_SIZE          18
 
-/* Global Variable Definition for TIM5 Configuration */
-TIM_TimeBaseInitTypeDef TIM5_TimeBaseStructure;
-TIM_OCInitTypeDef TIM5_OCInitStructure;
+/* Global Variable Definition for TIM4 Configuration */
+TIM_TimeBaseInitTypeDef TIM4_TimeBaseStructure;
+TIM_OCInitTypeDef TIM4_OCInitStructure;
 
 /*Global variable for APB1/APB2 prescaler from RCC_Configuration.c file */
 extern uint32_t RCC_APB1_Prescaler;
 extern uint32_t RCC_APB2_Prescaler;
 
-/* Global Variable Definition for TIM4 Configuration */
-TIM_TimeBaseInitTypeDef TIM4_TimeBaseStructure;
-TIM_OCInitTypeDef TIM4_OCInitStructure;
+/* Global Variable Definition for TIM5 Configuration */
+TIM_TimeBaseInitTypeDef TIM5_TimeBaseStructure;
+TIM_OCInitTypeDef TIM5_OCInitStructure;
 
 /*Global variable for APB1/APB2 prescaler from RCC_Configuration.c file */
 extern uint32_t RCC_APB1_Prescaler;
@@ -287,9 +287,6 @@ static uint16_t USART3_NbCharSent = 0;
 /* Block signals (auto storage) */
 B_daq daq_B;
 
-/* Block states (auto storage) */
-DW_daq daq_DW;
-
 /* External inputs (root inport signals with auto storage) */
 ExtU_daq daq_U;
 
@@ -300,11 +297,11 @@ ExtY_daq daq_Y;
 RT_MODEL_daq daq_M_;
 RT_MODEL_daq *const daq_M = &daq_M_;
 
-/* Function Declaration for TIM5 Configuration */
-void TIM5_Configuration(void);
-
 /* Function Declaration for TIM4 Configuration */
 void TIM4_Configuration(void);
+
+/* Function Declaration for TIM5 Configuration */
+void TIM5_Configuration(void);
 
 /* Function Declaration for ADC1 Configuration */
 void ADC1_Init(void);
@@ -356,62 +353,6 @@ void USART1_Config(void);
 void USART3_Config(void);
 
 /*******************************************************************************
- * Function Name  : TIM5_Configuration
- * Description    : TIM5 PWM output or Input_Capture Configuration
- * Input          : -
- *******************************************************************************/
-void TIM5_Configuration(void)
-{
-  /* Time base configuration */
-  switch (RCC_APB1_Prescaler) {
-   case RCC_HCLK_Div4:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
-      21000000) - 1;
-    break;
-
-   case RCC_HCLK_Div8:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
-      21000000) - 1;
-    break;
-
-   case RCC_HCLK_Div16:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
-      21000000) - 1;
-    break;
-
-   default:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 21000000)
-      - 1;
-    break;
-  }
-
-  TIM5_TimeBaseStructure.TIM_Period = 21000000 / 100000 -1;
-  TIM5_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-  TIM5_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(TIM5, &TIM5_TimeBaseStructure);
-
-  /* PWM output mode configuration: Channel CH1*/
-  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
-  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-  TIM_OC1Init(TIM5, &TIM5_OCInitStructure);
-  TIM_OC1PreloadConfig(TIM5, TIM_OCPreload_Enable);
-
-  /* PWM output mode configuration: Channel CH2*/
-  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
-  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
-  TIM_OC2Init(TIM5, &TIM5_OCInitStructure);
-  TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
-  TIM_ARRPreloadConfig(TIM5, ENABLE);
-
-  /* TIM5 enable counter */
-  TIM_Cmd(TIM5, ENABLE);
-}
-
-/*******************************************************************************
  * Function Name  : TIM4_Configuration
  * Description    : TIM4 PWM output or Input_Capture Configuration
  * Input          : -
@@ -450,13 +391,85 @@ void TIM4_Configuration(void)
   TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
   TIM_OC1Init(TIM4, &TIM4_OCInitStructure);
   TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+
+  /* PWM output mode configuration: Channel CH2*/
+  TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM_OC2Init(TIM4, &TIM4_OCInitStructure);
+  TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+
+  /* PWM output mode configuration: Channel CH3*/
+  TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM_OC3Init(TIM4, &TIM4_OCInitStructure);
+  TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
   TIM_ARRPreloadConfig(TIM4, ENABLE);
 
   /* TIM4 enable counter */
   TIM_Cmd(TIM4, ENABLE);
+}
+
+/*******************************************************************************
+ * Function Name  : TIM5_Configuration
+ * Description    : TIM5 PWM output or Input_Capture Configuration
+ * Input          : -
+ *******************************************************************************/
+void TIM5_Configuration(void)
+{
+  /* Time base configuration */
+  switch (RCC_APB1_Prescaler) {
+   case RCC_HCLK_Div4:
+    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
+      21000000) - 1;
+    break;
+
+   case RCC_HCLK_Div8:
+    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
+      21000000) - 1;
+    break;
+
+   case RCC_HCLK_Div16:
+    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
+      21000000) - 1;
+    break;
+
+   default:
+    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 21000000)
+      - 1;
+    break;
+  }
+
+  TIM5_TimeBaseStructure.TIM_Period = 21000000 / 100000 -1;
+  TIM5_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM5_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM5, &TIM5_TimeBaseStructure);
+
+  /* PWM output mode configuration: Channel CH1*/
+  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
+  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC1Init(TIM5, &TIM5_OCInitStructure);
+  TIM_OC1PreloadConfig(TIM5, TIM_OCPreload_Enable);
+
+  /* PWM output mode configuration: Channel CH2*/
+  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
+  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM_OC2Init(TIM5, &TIM5_OCInitStructure);
+  TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
+  TIM_ARRPreloadConfig(TIM5, ENABLE);
+
+  /* TIM5 enable counter */
+  TIM_Cmd(TIM5, ENABLE);
 }
 
 /*******************************************************************************
@@ -594,36 +607,24 @@ void GPIOA_Configuration(void)
   GPIO_DeInit(GPIOA);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_TIM5);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM5);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_USART2);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
   GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -631,23 +632,19 @@ void GPIOA_Configuration(void)
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOA_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOA_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_ETH);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC, ENABLE);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC_Rx, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -655,20 +652,14 @@ void GPIOA_Configuration(void)
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -676,10 +667,10 @@ void GPIOA_Configuration(void)
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOA_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
-  GPIO_Write(GPIOA,4192);
+  GPIO_Write(GPIOA,0);
 }
 
 /*******************************************************************************
@@ -706,28 +697,28 @@ void GPIOB_Configuration(void)
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOB_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -736,53 +727,38 @@ void GPIOB_Configuration(void)
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource10, GPIO_AF_USART3);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource11, GPIO_AF_USART3);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource12, GPIO_AF_OTG_HS_FS);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_OTG_HS, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_OTG_HS);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_OTG_HS_ULPI, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
 
   /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource14, GPIO_AF_OTG_HS_FS);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_OTG_HS, ENABLE);
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource14, GPIO_AF_SPI2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_OTG_HS_FS);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_OTG_HS, ENABLE);
-  GPIO_Write(GPIOB,480);
+  GPIO_Write(GPIOB,0);
 }
 
 /*******************************************************************************
@@ -799,113 +775,85 @@ void GPIOC_Configuration(void)
   GPIO_DeInit(GPIOC);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOC_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource1, GPIO_AF_ETH);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AN;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource4, GPIO_AF_ETH);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC_Rx, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource5, GPIO_AF_ETH);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC_Rx, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource8, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource9, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOC_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOC_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOC_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
-  GPIO_Write(GPIOC,16385);
+  GPIO_Write(GPIOC,0);
 }
 
 /*******************************************************************************
@@ -922,91 +870,94 @@ void GPIOD_Configuration(void)
   GPIO_DeInit(GPIOD);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource2, GPIO_AF_SDIO);
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SDIO, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_5;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_6;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_7;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_8;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_9;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_10;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_11;
-  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
 
   /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_6;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_7;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_8;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_9;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_10;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_11;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
+  GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_12;
+  GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_TIM4);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOD_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
-  GPIO_Write(GPIOD,61363);
+  GPIO_Write(GPIOD,0);
 }
 
 /*******************************************************************************
@@ -1023,85 +974,85 @@ void GPIOE_Configuration(void)
   GPIO_DeInit(GPIOE);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOE_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
-  GPIO_Write(GPIOE,65535);
+  GPIO_Write(GPIOE,0);
 }
 
 /*******************************************************************************
@@ -1118,85 +1069,85 @@ void GPIOF_Configuration(void)
   GPIO_DeInit(GPIOF);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
   GPIOF_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOF_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOF_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOF_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOF_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOF, &GPIOF_InitStructure);
-  GPIO_Write(GPIOF,65535);
+  GPIO_Write(GPIOF,0);
 }
 
 /*******************************************************************************
@@ -1213,88 +1164,85 @@ void GPIOG_Configuration(void)
   GPIO_DeInit(GPIOG);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOG, GPIO_PinSource11, GPIO_AF_ETH);
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_ETH_MAC_Tx, ENABLE);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
   GPIOG_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOG_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOG_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOG_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOG_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOG, &GPIOG_InitStructure);
-  GPIO_Write(GPIOG,38719);
+  GPIO_Write(GPIOG,0);
 }
 
 /*******************************************************************************
@@ -1311,60 +1259,60 @@ void GPIOH_Configuration(void)
   GPIO_DeInit(GPIOH);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOH, GPIO_PinSource4, GPIO_AF_I2C2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_5;
-  GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_Init(GPIOH, &GPIOH_InitStructure);
-  GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
 
   /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOH, GPIO_PinSource6, GPIO_AF_TIM12);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM12, ENABLE);
+  GPIO_PinAFConfig(GPIOH, GPIO_PinSource5, GPIO_AF_I2C2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_I2C2, ENABLE);
+  GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_6;
+  GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOH, GPIO_PinSource10, GPIO_AF_TIM5);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -1375,28 +1323,25 @@ void GPIOH_Configuration(void)
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOH, GPIO_PinSource13, GPIO_AF_CAN1);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOH_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
-  GPIO_Write(GPIOH,16574);
+  GPIO_Write(GPIOH,0);
 }
 
 /*******************************************************************************
@@ -1413,12 +1358,9 @@ void GPIOI_Configuration(void)
   GPIO_DeInit(GPIOI);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOI, GPIO_PinSource0, GPIO_AF_SPI2);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -1429,12 +1371,9 @@ void GPIOI_Configuration(void)
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOI, GPIO_PinSource2, GPIO_AF_SPI2);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI2, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -1450,18 +1389,18 @@ void GPIOI_Configuration(void)
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOI_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOI_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOI_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
@@ -1470,12 +1409,9 @@ void GPIOI_Configuration(void)
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOI, GPIO_PinSource9, GPIO_AF_CAN1);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_CAN1, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -1483,10 +1419,10 @@ void GPIOI_Configuration(void)
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIOI_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
-  GPIO_Write(GPIOI,32);
+  GPIO_Write(GPIOI,0);
 }
 
 /*******************************************************************************
@@ -1802,15 +1738,6 @@ void USART3_IRQHandler(void)
 }
 
 /*******************************************************************************
- * Function Name  : TIM5_IRQHandler
- * Description    : This function handles TIM5 interrupt request.
- * Input          : -
- *******************************************************************************/
-void TIM5_IRQHandler(void)
-{
-}
-
-/*******************************************************************************
  * Function Name  : TIM4_IRQHandler
  * Description    : This function handles TIM4 interrupt request.
  * Input          : -
@@ -1819,20 +1746,18 @@ void TIM4_IRQHandler(void)
 {
 }
 
+/*******************************************************************************
+ * Function Name  : TIM5_IRQHandler
+ * Description    : This function handles TIM5 interrupt request.
+ * Input          : -
+ *******************************************************************************/
+void TIM5_IRQHandler(void)
+{
+}
+
 /* Model step function */
 void daq_step(void)
 {
-  real_T cnt;
-  real_T j;
-  int32_T i;
-  uint16_T crc;
-  real32_T y;
-  uint8_T x[4];
-  int32_T b_i;
-  real32_T rtb_imuData[3];
-  int32_T unnamed_idx_1;
-  uint8_T msg_data[18];
-
   {
     /* user code (Output function Header) */
 #ifndef USART1_IT_SEND
@@ -1851,7 +1776,7 @@ void daq_step(void)
     char* charToSend;
 
 #endif
-
+//
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
 
@@ -1875,23 +1800,16 @@ void daq_step(void)
 
 #endif
 
-    uint16_t L_GPIOVal_GPIOG = GPIO_ReadOutputData(GPIOG) & ~(uint16_t)1216;
-    uint16_t L_GPIOVal_GPIOH = GPIO_ReadOutputData(GPIOH) & ~(uint16_t)768;
-    uint16_t L_GPIOVal_GPIOI = GPIO_ReadOutputData(GPIOI) & ~(uint16_t)2288;
-    uint16_t L_GPIOVal_GPIOC = GPIO_ReadOutputData(GPIOC) & ~(uint16_t)40960;
-    uint16_t L_GPIOVal_GPIOA = GPIO_ReadOutputData(GPIOA) & ~(uint16_t)16;
-    uint16_t L_GPIOVal_GPIOD = GPIO_ReadOutputData(GPIOD) & ~(uint16_t)72;
-
     /* user code (Output function Body) */
 #ifndef USART1_IT_RCV
 
     /* Pulling reception: Get received char while any and less than buff size*/
     while ((USART1->SR & USART_FLAG_RXNE) != (uint16_t)RESET &&
-           USART1_NbrOfDataInBuff < 18) {
+           USART1_NbrOfDataInBuff < 500) {
       /* Read one byte from the receive data register */
       *USART1_WritePt++ = USART1->DR;
       USART1_NbrOfDataInBuff++;
-      if (USART1_WritePt > &USART1_RxBuffer[18])
+      if (USART1_WritePt > &USART1_RxBuffer[500])
         USART1_WritePt = USART1_RxBuffer;
     }
 
@@ -1902,11 +1820,11 @@ void daq_step(void)
 
     /* Processing when data has been received only*/
     if (USART1_NbrOfDataInBuff ) {
-      for (i = 0; i< 18;i++) {
+      for (i = 0; i< 500;i++) {
         USART1_RxOutputDataBuffer[i] = *USART1_ReadPt++;
         USART1_NbrOfDataInBuff--;
         NbData_Read++;
-        if (USART1_ReadPt > &USART1_RxBuffer[18]) {
+        if (USART1_ReadPt > &USART1_RxBuffer[500]) {
           USART1_ReadPt = USART1_RxBuffer;
         }
 
@@ -1925,7 +1843,7 @@ void daq_step(void)
     {
       int_T i1;
       uint8_T *y1 = &daq_Y.usart1_RcvVal[0];
-      for (i1=0; i1 < 18; i1++) {
+      for (i1=0; i1 < 500; i1++) {
         y1[i1] = *USART1_RxOutputDataBufferPt++;
       }
     }
@@ -2107,17 +2025,17 @@ void daq_step(void)
     /* DigitalClock: '<S2>/Digital Clock' */
     daq_Y.time = ((daq_M->Timing.clockTick0) * 0.2);
 
-    /* S-Function Block: <S10>/USART_Send4 */
+    /* S-Function Block: <S9>/USART_Send4 */
 
-    /* S-Function Block: <S10>/USART_Receive4 */
+    /* S-Function Block: <S9>/USART_Receive4 */
+
+    /* S-Function Block: <S11>/USART_Send4 */
+
+    /* S-Function Block: <S11>/USART_Receive4 */
 
     /* S-Function Block: <S12>/USART_Send4 */
 
     /* S-Function Block: <S12>/USART_Receive4 */
-
-    /* S-Function Block: <S13>/USART_Send4 */
-
-    /* S-Function Block: <S13>/USART_Receive4 */
 
     /* S-Function Block: <S5>/ADC_Read */
 
@@ -2139,101 +2057,9 @@ void daq_step(void)
     /* Outport: '<Root>/do5' */
     daq_Y.do5 = 0.0;
 
-    /* S-Function Block: <S11>/USART_Receive4 */
+    /* S-Function Block: <S10>/USART_Receive4 */
 
-    /* MATLAB Function: '<S9>/parse_imu' incorporates:
-     *  UnitDelay: '<S9>/Unit Delay'
-     */
-    /* MATLAB Function 'DAQ/imuDataParse/parse_imu': '<S14>:1' */
-    /*  msg = uint8(zeros(1,150)); */
-    /*  Buffer size equal to msg size. */
-    /* '<S14>:1:16' */
-    rtb_imuData[0] = daq_DW.UnitDelay_DSTATE[0];
-    rtb_imuData[1] = daq_DW.UnitDelay_DSTATE[1];
-    rtb_imuData[2] = daq_DW.UnitDelay_DSTATE[2];
-
-    /* '<S14>:1:19' */
-    for (i = 0; i < 15; i++) {
-      /* '<S14>:1:19' */
-      if ((daq_Y.usart2_RcvVal[i] == 250) && (daq_Y.usart2_RcvVal[1 + i] == 1) &&
-          (daq_Y.usart2_RcvVal[2 + i] == 8) && (daq_Y.usart2_RcvVal[3 + i] == 0)
-          && (18 - i >= 18)) {
-        /* '<S14>:1:20' */
-        /* '<S14>:1:21' */
-        /* '<S14>:1:22' */
-        /* '<S14>:1:23' */
-        /* '<S14>:1:24' */
-        /*  Test checksum  */
-        /*  d0 = ['FA','01','28','00','E5','68','2C','43','5C', '21', 'B3','3F','22','A3','CE','3F','90','B5','D8', 'B9', 'B0','29',... */
-        /*      '28','3A', 'A0', '37' ,'66','BA','B3','D1']; */
-        /*   */
-        /*  d1 = []; */
-        /*  for i=1:2:length(d0) */
-        /*      d1 = [d1 hex2dec(d0(i:i+1))]; */
-        /*  end */
-        /*   */
-        /*  d1 = uint8(d1); */
-        /*   */
-        /*  msg = d1; */
-        crc = 0U;
-        unnamed_idx_1 = 17 - i;
-        for (b_i = 0; b_i < unnamed_idx_1; b_i++) {
-          crc = (uint16_T)((uint16_T)((uint16_T)((uint32_T)crc >> 8) | (uint16_T)
-                            (crc << 8)) ^ daq_Y.usart2_RcvVal[(i + b_i) + 1]);
-          crc ^= (uint16_T)((uint32_T)(crc & 255) >> 4);
-          crc ^= (uint16_T)(crc << 12);
-          crc ^= (uint16_T)((crc & 255) << 5);
-        }
-
-        if (!(crc != 0)) {
-          /* '<S14>:1:25' */
-          /* '<S14>:1:26' */
-          unnamed_idx_1 = -i;
-          for (b_i = 0; b_i <= unnamed_idx_1 + 17; b_i++) {
-            msg_data[b_i] = daq_Y.usart2_RcvVal[i + b_i];
-          }
-
-          /* '<S14>:1:28' */
-          cnt = 5.0;
-
-          /* '<S14>:1:29' */
-          j = 1.0;
-
-          /* '<S14>:1:52' */
-          for (unnamed_idx_1 = 0; unnamed_idx_1 < 3; unnamed_idx_1++) {
-            /* '<S14>:1:52' */
-            /*                                      imuData(j) = typecast(msg(cnt:cnt+imuBinaryMsg.msgType.size.Ypr/3-1),... */
-            /*                                      imuBinaryMsg.msgType.type.Ypr); */
-            /* '<S14>:1:55' */
-            x[0] = msg_data[(int32_T)cnt - 1];
-            x[1] = msg_data[(int32_T)(cnt + 1.0) - 1];
-            x[2] = msg_data[(int32_T)(cnt + 2.0) - 1];
-            x[3] = msg_data[(int32_T)(cnt + 3.0) - 1];
-            memcpy(&y, &x[0], 4U);
-            rtb_imuData[(int32_T)j - 1] = y;
-
-            /* '<S14>:1:57' */
-            cnt += 4.0;
-
-            /* '<S14>:1:58' */
-            j++;
-
-            /* '<S14>:1:52' */
-          }
-        }
-      }
-
-      /* '<S14>:1:19' */
-    }
-
-    /* End of MATLAB Function: '<S9>/parse_imu' */
-
-    /* Outport: '<Root>/imuData' */
-    daq_Y.imuData[0] = rtb_imuData[0];
-    daq_Y.imuData[1] = rtb_imuData[1];
-    daq_Y.imuData[2] = rtb_imuData[2];
-
-    /* S-Function Block: <S11>/USART_Send4 */
+    /* S-Function Block: <S10>/USART_Send4 */
 
     /* S-Function Block: <S6>/GPIO_Read1 */
 
@@ -2254,6 +2080,9 @@ void daq_step(void)
     /* S-Function Block: <S6>/GPIO_Write4 */
 
     /* S-Function Block: <S6>/GPIO_Write5 */
+
+    /* Outport: '<Root>/imuData' */
+    daq_Y.imuData = 0.0;
 
     /* user code (Output function Trailer) */
 #ifdef USART1_IT_SEND
@@ -2368,30 +2197,76 @@ void daq_step(void)
 
 #endif
 
-    GPIO_Write(GPIOG, L_GPIOVal_GPIOG | ((uint16_t)((uint16_T)0U) & (uint16_t)
-                1216));
-    GPIO_ToggleBits(GPIOG,GPIO_Pin_13);
-    GPIO_ToggleBits(GPIOG,GPIO_Pin_14);
-    GPIO_Write(GPIOH, L_GPIOVal_GPIOH | ((uint16_t)((uint16_T)0U) & (uint16_t)
-                768));
-    GPIO_Write(GPIOI, L_GPIOVal_GPIOI | ((uint16_t)((uint16_T)0U) & (uint16_t)
-                2288));
-    GPIO_Write(GPIOC, L_GPIOVal_GPIOC | ((uint16_t)((uint16_T)0U) & (uint16_t)
-                40960));
-    GPIO_Write(GPIOA, L_GPIOVal_GPIOA | ((uint16_t)((uint16_T)0U) & (uint16_t)16));
-    GPIO_Write(GPIOD, L_GPIOVal_GPIOD | ((uint16_t)((uint16_T)0U) & (uint16_t)72));
+    GPIO_ToggleBits(GPIOD,GPIO_Pin_13);
+    GPIO_ToggleBits(GPIOD,GPIO_Pin_14);
   }
-
-  /* Update for UnitDelay: '<S9>/Unit Delay' */
-  daq_DW.UnitDelay_DSTATE[0] = rtb_imuData[0];
-  daq_DW.UnitDelay_DSTATE[1] = rtb_imuData[1];
-  daq_DW.UnitDelay_DSTATE[2] = rtb_imuData[2];
 
   /* Update for S-Function (TIMERS_Config): '<S7>/Timers' */
 
   /* Timer frequency is an input port */
-  TIM5->ARR = 21000000 / daq_P.pwm5_freq_Value -1;
+  TIM4->ARR = 21000000 / daq_P.pwm5_freq_Value -1;
+  if (0 < 0) {
+    /* Disable output and complementary output */
+    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+
+    //            TIM4->CCER |= 0x4;     //CC1NE = 1
+    //            TIM4->CCER &= 0xFFFE;  //CC1E = 0
+    TIM4->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
+    TIM4->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
+  } else {
+    // Enable output and complementary output and update dutyCycle
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
+
+    // Channel1 duty cycle is an input port
+    TIM4->CCR1 = 0 * TIM4->ARR / 100;
+  }
+
+  if (0 < 0) {
+    /* Disable output and complementary output */
+    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+
+    //            TIM4->CCER |= 0x40;    //CC2NE = 1
+    //            TIM4->CCER &= 0xFFEF;  //CC2E = 0
+    TIM4->CCER &= 0xFFAF;              //CC2E = 0 CC2NE = 0
+    TIM4->CR2 &= 0xF3FF;               //OIS2 = 0 OIS2N = 0
+  } else {
+    /* Enable output and complementary output and update dutyCycle*/
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
+
+    /* Channel2 duty cycle is an input port */
+    TIM4->CCR2 = 0 * TIM4->ARR / 100;
+  }
+
   if (daq_U.pwm5_1 < 0) {
+    /* Disable output and complementary output */
+    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+
+    //            TIM4->CCER |= 0x400;   //CC3NE = 1
+    //            TIM4->CCER &= 0xFEFF;  //CC3E = 0
+    TIM4->CCER &= 0xFAFF;              //CC3E = 0 CC3NE = 0
+    TIM4->CR2 &= 0xCFFF;               //OIS3 = 0 OIS3N = 0
+  } else {
+    /* Enable output and complementary output and update dutyCycle*/
+    TIM4->BDTR |= 0x8000;              //MOE = 1
+    TIM4->CCER |= 0x500;               //CC3NE = 1 and CC3E = 1
+
+    /* Channel3 duty cycle is an input port */
+    TIM4->CCR3 = daq_U.pwm5_1 * TIM4->ARR / 100;
+  }
+
+  /* Update for S-Function (TIMERS_Config): '<S7>/Timers1' */
+
+  /* Timer frequency is an input port */
+  TIM5->ARR = 21000000 / daq_P.pwm4_freq_Value -1;
+  if (0 < 0) {
     /* Disable output and complementary output */
     //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
     TIM5->BDTR |= 0x8000;              //MOE = 1
@@ -2407,7 +2282,7 @@ void daq_step(void)
     TIM5->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM5->CCR1 = daq_U.pwm5_1 * TIM5->ARR / 100;
+    TIM5->CCR1 = 0 * TIM5->ARR / 100;
   }
 
   if (daq_U.pwm5_2 < 0) {
@@ -2427,29 +2302,6 @@ void daq_step(void)
 
     /* Channel2 duty cycle is an input port */
     TIM5->CCR2 = daq_U.pwm5_2 * TIM5->ARR / 100;
-  }
-
-  /* Update for S-Function (TIMERS_Config): '<S7>/Timers1' */
-
-  /* Timer frequency is an input port */
-  TIM4->ARR = 21000000 / daq_P.pwm4_freq_Value -1;
-  if (daq_U.pwm5_3 < 0) {
-    /* Disable output and complementary output */
-    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
-
-    //            TIM4->CCER |= 0x4;     //CC1NE = 1
-    //            TIM4->CCER &= 0xFFFE;  //CC1E = 0
-    TIM4->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
-    TIM4->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
-  } else {
-    // Enable output and complementary output and update dutyCycle
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
-
-    // Channel1 duty cycle is an input port
-    TIM4->CCR1 = daq_U.pwm5_3 * TIM4->ARR / 100;
   }
 
   /* Update absolute time for base rate */
@@ -2473,10 +2325,6 @@ void daq_initialize(void)
   /* block I/O */
   (void) memset(((void *) &daq_B), 0,
                 sizeof(B_daq));
-
-  /* states (dwork) */
-  (void) memset((void *)&daq_DW, 0,
-                sizeof(DW_daq));
 
   /* external inputs */
   (void) memset((void *)&daq_U, 0,
@@ -2626,19 +2474,14 @@ void daq_initialize(void)
 
   /* user code (Start function Trailer) */
 
-  /* TIM5 Configuration */
-  TIM5_Configuration();
-
   /* TIM4 Configuration */
   TIM4_Configuration();
 
+  /* TIM5 Configuration */
+  TIM5_Configuration();
+
   /* ADC1 START */
   ADC1_Start();
-
-  /* InitializeConditions for UnitDelay: '<S9>/Unit Delay' */
-  daq_DW.UnitDelay_DSTATE[0] = daq_P.UnitDelay_InitialCondition;
-  daq_DW.UnitDelay_DSTATE[1] = daq_P.UnitDelay_InitialCondition;
-  daq_DW.UnitDelay_DSTATE[2] = daq_P.UnitDelay_InitialCondition;
 }
 
 /* File trailer for Real-Time Workshop generated code.
