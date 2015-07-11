@@ -37,6 +37,7 @@
 #include "stddef.h"
 #include "stm32f4xx.h"
 #include "daq.h"
+#include "controller.h"
 #include "rtwtypes.h"
 #include "debug.h"
 
@@ -106,24 +107,40 @@ void SysTick_Handler(void)
 
 	OverrunFlags[0] = true;
 
-	/* Step the model for base rate */
-	daq_step();
-	
 	/* vn100 read yaw, pitch, and roll */
 	VN100_SPI_Packet *packet;
 	float yaw, pitch, roll;
 	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
-
-	char Buff [] = "                                                                     \r\n\0";
-	const char *tmpBuff = "roll = %f, pitch = %f, yaw = %f";
-	sprintf(Buff, tmpBuff,roll,pitch,yaw);
-	debug_printf(Buff, 72);
 	
+	controller_U.alpha[0];
+	controller_U.alpha[1];
+	controller_U.roll = roll;
+	controller_U.pitch = pitch;
+	controller_U.yaw = yaw;
 	
+	/* Step the controller for base rate */
+	controller_step();
+		
 	/* servo actuators*/
-	daq_U.pwm5_1 = 10;    
-	daq_U.pwm5_2 = 20;
+	//daq_U.pwm_pd13 = controller_Y.left_t;		// left tail 
+	//daq_U.pwm_pd12 = controller_Y.right_t;		// right tail 
+	//daq_U.pwm_pd14 = controller_Y.left_w;		// left arm-wing
+	//daq_U.pwm_ph11 = controller_Y.right_w;		// right arm-wing
 	
+	daq_U.pwm_pd13 = 5;		// left tail 
+	daq_U.pwm_pd12 = 5;		// right tail 
+	daq_U.pwm_pd14 = 5;		// left arm-wing
+	daq_U.pwm_ph11 = 5;		// right arm-wing 
+	
+	/* Step the model for base rate */
+	daq_step();
+	
+	
+
+	char Buff [] = "                                                                                                                                           \r\n\0";
+	const char *tmpBuff = "roll = %f, pitch = %f, yaw = %f,  ult = %f, urt = %f, ulw = %f, , urw = %f";
+	sprintf(Buff, tmpBuff, controller_Y.rpy[0], controller_Y.rpy[1], controller_Y.rpy[2], controller_Y.left_t, controller_Y.right_t, controller_Y.left_w, controller_Y.right_w);
+	debug_printf(Buff, 144);
 	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;
@@ -154,9 +171,15 @@ int main (void)
 	/* Model initialization call */
 	daq_initialize();
 	
+	/* controller initialization call */
+	controller_initialize();
+	
 	/* Initilaize the vn100 application */
 	//vn100_initialize_defaults();
 	SPI_initialize();	// vn100 spi initialization ...
+	
+	/* tare imu */
+	VN100_SPI_Tare(0);
 
 	/* Systick configuration and enable SysTickHandler interrupt */
 	float dt = SAMPLE_TIME;
@@ -172,18 +195,10 @@ int main (void)
 
 	remainAutoReloadTimerLoopVal_S = autoReloadTimerLoopVal_S;//Set nb of loop to do
 
-
 	/* Infinite loop */
 	/* Real time from systickHandler */
 	while (1) 
 	{
-		/* Get the sensor model */
-		//VN100_SPI_Packet *packet;
-		//char model[12];
-		//packet = VN100_SPI_GetModel(0, model);
-		
-		
-		//
 	}	
 }
 

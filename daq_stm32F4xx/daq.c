@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.40
+ * Model version      : 1.46
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Tue Jun 23 20:05:13 2015
+ * C/C++ source code generated on  : Fri Jul 10 17:46:54 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -363,26 +363,26 @@ void TIM4_Configuration(void)
   switch (RCC_APB1_Prescaler) {
    case RCC_HCLK_Div4:
     TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
-      21000000) - 1;
+      1312500) - 1;
     break;
 
    case RCC_HCLK_Div8:
     TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
-      21000000) - 1;
+      1312500) - 1;
     break;
 
    case RCC_HCLK_Div16:
     TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
-      21000000) - 1;
+      1312500) - 1;
     break;
 
    default:
-    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 21000000)
+    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 1312500)
       - 1;
     break;
   }
 
-  TIM4_TimeBaseStructure.TIM_Period = 21000000 / 100000 -1;
+  TIM4_TimeBaseStructure.TIM_Period = 1312500 / 50 -1;
   TIM4_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
   TIM4_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
   TIM_TimeBaseInit(TIM4, &TIM4_TimeBaseStructure);
@@ -391,7 +391,7 @@ void TIM4_Configuration(void)
   TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
   TIM_OC1Init(TIM4, &TIM4_OCInitStructure);
   TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
@@ -399,7 +399,7 @@ void TIM4_Configuration(void)
   TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
   TIM_OC2Init(TIM4, &TIM4_OCInitStructure);
   TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
 
@@ -407,7 +407,7 @@ void TIM4_Configuration(void)
   TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
   TIM_OC3Init(TIM4, &TIM4_OCInitStructure);
   TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
   TIM_ARRPreloadConfig(TIM4, ENABLE);
@@ -446,7 +446,7 @@ void TIM5_Configuration(void)
     break;
   }
 
-  TIM5_TimeBaseStructure.TIM_Period = 21000000 / 100000 -1;
+  TIM5_TimeBaseStructure.TIM_Period = 21000000 / 50 -1;
   TIM5_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
   TIM5_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
   TIM_TimeBaseInit(TIM5, &TIM5_TimeBaseStructure);
@@ -463,7 +463,7 @@ void TIM5_Configuration(void)
   TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
   TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
   TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
-  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
   TIM_OC2Init(TIM5, &TIM5_OCInitStructure);
   TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
   TIM_ARRPreloadConfig(TIM5, ENABLE);
@@ -936,14 +936,20 @@ void GPIOD_Configuration(void)
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_12;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource12, GPIO_AF_TIM4);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_13;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOD, GPIO_PinSource13, GPIO_AF_TIM4);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -1310,9 +1316,12 @@ void GPIOH_Configuration(void)
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOH_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOH, &GPIOH_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOH, GPIO_PinSource10, GPIO_AF_TIM5);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM5, ENABLE);
   GPIOH_InitStructure.GPIO_Pin = GPIO_Pin_11;
   GPIOH_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOH_InitStructure.GPIO_Mode = GPIO_Mode_AF;
@@ -1776,7 +1785,7 @@ void daq_step(void)
     char* charToSend;
 
 #endif
-//
+
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
 
@@ -2197,6 +2206,9 @@ void daq_step(void)
 
 #endif
 
+    GPIO_ToggleBits(GPIOI,GPIO_Pin_5);
+    GPIO_ToggleBits(GPIOI,GPIO_Pin_6);
+    GPIO_ToggleBits(GPIOI,GPIO_Pin_7);
     GPIO_ToggleBits(GPIOD,GPIO_Pin_13);
     GPIO_ToggleBits(GPIOD,GPIO_Pin_14);
   }
@@ -2204,8 +2216,8 @@ void daq_step(void)
   /* Update for S-Function (TIMERS_Config): '<S7>/Timers' */
 
   /* Timer frequency is an input port */
-  TIM4->ARR = 21000000 / daq_P.pwm5_freq_Value -1;
-  if (0 < 0) {
+  TIM4->ARR = 1312500 / daq_P.pwm_freq_Value -1;
+  if (daq_U.pwm_pd12 < 0) {
     /* Disable output and complementary output */
     //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
     TIM4->BDTR |= 0x8000;              //MOE = 1
@@ -2221,10 +2233,10 @@ void daq_step(void)
     TIM4->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM4->CCR1 = 0 * TIM4->ARR / 100;
+    TIM4->CCR1 = daq_U.pwm_pd12 * TIM4->ARR / 100;
   }
 
-  if (0 < 0) {
+  if (daq_U.pwm_pd13 < 0) {
     /* Disable output and complementary output */
     //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
     TIM4->BDTR |= 0x8000;              //MOE = 1
@@ -2240,10 +2252,10 @@ void daq_step(void)
     TIM4->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
 
     /* Channel2 duty cycle is an input port */
-    TIM4->CCR2 = 0 * TIM4->ARR / 100;
+    TIM4->CCR2 = daq_U.pwm_pd13 * TIM4->ARR / 100;
   }
 
-  if (daq_U.pwm5_1 < 0) {
+  if (daq_U.pwm_pd14 < 0) {
     /* Disable output and complementary output */
     //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
     TIM4->BDTR |= 0x8000;              //MOE = 1
@@ -2259,14 +2271,14 @@ void daq_step(void)
     TIM4->CCER |= 0x500;               //CC3NE = 1 and CC3E = 1
 
     /* Channel3 duty cycle is an input port */
-    TIM4->CCR3 = daq_U.pwm5_1 * TIM4->ARR / 100;
+    TIM4->CCR3 = daq_U.pwm_pd14 * TIM4->ARR / 100;
   }
 
   /* Update for S-Function (TIMERS_Config): '<S7>/Timers1' */
 
   /* Timer frequency is an input port */
-  TIM5->ARR = 21000000 / daq_P.pwm4_freq_Value -1;
-  if (0 < 0) {
+  TIM5->ARR = 21000000 / daq_P.pwm_freq_Value -1;
+  if (50 < 0) {
     /* Disable output and complementary output */
     //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
     TIM5->BDTR |= 0x8000;              //MOE = 1
@@ -2282,10 +2294,10 @@ void daq_step(void)
     TIM5->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM5->CCR1 = 0 * TIM5->ARR / 100;
+    TIM5->CCR1 = 50 * TIM5->ARR / 100;
   }
 
-  if (daq_U.pwm5_2 < 0) {
+  if (daq_U.pwm_ph11 < 0) {
     /* Disable output and complementary output */
     //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
     TIM5->BDTR |= 0x8000;              //MOE = 1
@@ -2301,7 +2313,7 @@ void daq_step(void)
     TIM5->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
 
     /* Channel2 duty cycle is an input port */
-    TIM5->CCR2 = daq_U.pwm5_2 * TIM5->ARR / 100;
+    TIM5->CCR2 = daq_U.pwm_ph11 * TIM5->ARR / 100;
   }
 
   /* Update absolute time for base rate */

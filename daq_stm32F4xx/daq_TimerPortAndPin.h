@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.40
+ * Model version      : 1.46
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Tue Jun 23 20:05:13 2015
+ * C/C++ source code generated on  : Fri Jul 10 17:46:54 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -33,7 +33,13 @@
 #ifndef RTW_HEADER_daq_TimerPortAndPin_h_
 #define RTW_HEADER_daq_TimerPortAndPin_h_
 #define GPIO_TIM4_PORT                 GPIOD
+#define GPIO_TIM4_PIN                  GPIO_Pin_12
+#define GPIO_TIM4_PORT                 GPIOD
+#define GPIO_TIM4_PIN                  GPIO_Pin_13
+#define GPIO_TIM4_PORT                 GPIOD
 #define GPIO_TIM4_PIN                  GPIO_Pin_14
+#define GPIO_TIM5_PORT                 GPIOH
+#define GPIO_TIM5_PIN                  GPIO_Pin_10
 #define GPIO_TIM5_PORT                 GPIOH
 #define GPIO_TIM5_PIN                  GPIO_Pin_11
 #endif                                 /* RTW_HEADER_daq_TimerPortAndPin_h_ */

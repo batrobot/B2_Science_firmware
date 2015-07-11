@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.40
+ * Model version      : 1.46
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Tue Jun 23 20:05:13 2015
+ * C/C++ source code generated on  : Fri Jul 10 17:46:54 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -65,9 +65,9 @@ typedef struct {
 
 /* External inputs (root inport signals with auto storage) */
 typedef struct {
-  int16_T pwm5_1;                      /* '<Root>/pwm5_1' */
-  int16_T pwm5_2;                      /* '<Root>/pwm5_2' */
-  real_T pwm5_3;                       /* '<Root>/pwm5_3' */
+  int16_T pwm_pd12;                    /* '<Root>/pwm_pd12' */
+  int16_T pwm_ph11;                    /* '<Root>/pwm_ph11' */
+  real_T pwm_pi5;                      /* '<Root>/pwm_pi5' */
   uint16_T usart1_Nb2Send;             /* '<Root>/usart1_Nb2Send' */
   uint8_T usart1_SendVal[1000];        /* '<Root>/usart1_SendVal' */
   uint16_T usart3_Nb2Send;             /* '<Root>/usart3_Nb2Send' */
@@ -91,6 +91,10 @@ typedef struct {
   real_T di15;                         /* '<Root>/di15' */
   uint16_T usart2_Nb2Send;             /* '<Root>/usart2_Nb2Send' */
   uint8_T usart2_SendVal[1000];        /* '<Root>/usart2_SendVal' */
+  real_T pwm_pi6;                      /* '<Root>/pwm_pi6' */
+  real_T pwm_pi7;                      /* '<Root>/pwm_pi7' */
+  int16_T pwm_pd13;                    /* '<Root>/pwm_pd13' */
+  int16_T pwm_pd14;                    /* '<Root>/pwm_pd14' */
 } ExtU_daq;
 
 /* External outputs (root outports fed by signals with auto storage) */
@@ -120,11 +124,8 @@ typedef struct {
 
 /* Parameters (auto storage) */
 struct P_daq_ {
-  real_T pwm4_freq_Value;              /* Expression: 20000
-                                        * Referenced by: '<S2>/pwm4_freq'
-                                        */
-  real_T pwm5_freq_Value;              /* Expression: 1000
-                                        * Referenced by: '<S2>/pwm5_freq'
+  real_T pwm_freq_Value;               /* Expression: 45
+                                        * Referenced by: '<S2>/pwm_freq'
                                         */
 };
 
