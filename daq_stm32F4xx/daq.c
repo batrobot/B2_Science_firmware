@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.46
+ * Model version      : 1.47
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Fri Jul 10 17:46:54 2015
+ * C/C++ source code generated on  : Sat Jul 11 01:46:17 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -1795,7 +1795,7 @@ void daq_step(void)
     char* charToSend;
 
 #endif
-
+//
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
     int OffsetADC1_L = 0;
@@ -2278,7 +2278,7 @@ void daq_step(void)
 
   /* Timer frequency is an input port */
   TIM5->ARR = 21000000 / daq_P.pwm_freq_Value -1;
-  if (50 < 0) {
+  if (daq_U.pwm_ph11 < 0) {
     /* Disable output and complementary output */
     //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
     TIM5->BDTR |= 0x8000;              //MOE = 1
@@ -2294,10 +2294,10 @@ void daq_step(void)
     TIM5->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM5->CCR1 = 50 * TIM5->ARR / 100;
+    TIM5->CCR1 = daq_U.pwm_ph11 * TIM5->ARR / 100;
   }
 
-  if (daq_U.pwm_ph11 < 0) {
+  if (daq_U.pwm_ph10 < 0) {
     /* Disable output and complementary output */
     //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
     TIM5->BDTR |= 0x8000;              //MOE = 1
@@ -2313,7 +2313,7 @@ void daq_step(void)
     TIM5->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
 
     /* Channel2 duty cycle is an input port */
-    TIM5->CCR2 = daq_U.pwm_ph11 * TIM5->ARR / 100;
+    TIM5->CCR2 = daq_U.pwm_ph10 * TIM5->ARR / 100;
   }
 
   /* Update absolute time for base rate */

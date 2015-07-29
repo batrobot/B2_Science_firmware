@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.46
+ * Model version      : 1.47
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Fri Jul 10 17:46:54 2015
+ * C/C++ source code generated on  : Sat Jul 11 01:46:17 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -95,6 +95,7 @@ typedef struct {
   real_T pwm_pi7;                      /* '<Root>/pwm_pi7' */
   int16_T pwm_pd13;                    /* '<Root>/pwm_pd13' */
   int16_T pwm_pd14;                    /* '<Root>/pwm_pd14' */
+  int16_T pwm_ph10;                    /* '<Root>/pwm_ph10' */
 } ExtU_daq;
 
 /* External outputs (root outports fed by signals with auto storage) */
@@ -124,7 +125,7 @@ typedef struct {
 
 /* Parameters (auto storage) */
 struct P_daq_ {
-  real_T pwm_freq_Value;               /* Expression: 45
+  real_T pwm_freq_Value;               /* Expression: 50
                                         * Referenced by: '<S2>/pwm_freq'
                                         */
 };
