@@ -40,20 +40,16 @@
 #include "controller.h"
 #include "rtwtypes.h"
 #include "debug.h"
+#include "as5048b.h"
 
 /* DAQ and controller loop at 1.0 KHz */
-#define SAMPLE_TIME 0.05
+#define SAMPLE_TIME 0.005
 
 /* Uncomment for debug msg over USART port */
 #define DEBUG_MAIN
 
-/* MACROS */
-#define PI 3.141592654
-#define DEG2RAD(x) x*PI/180
-#define RAD2DEG(x) x*180/PI
-
 /* this variable is used to create a time reference incremented by 1 mili-second */
-#define SYSTEMTICK_PERIOD_MS 1
+#define SYSTEMTICK_PERIOD_MS 0.01
 
 /* this variables are used to allocate a timer for the main application */
 #define MAIN_TIM TIM7
@@ -106,14 +102,24 @@ void SysTick_Handler(void)
 	}
 
 	OverrunFlags[0] = true;
+	
+	/* read encoders */
+	uint16_t angleReg[4];
+	uint8_t autoGain[4];
+	uint8_t diag[4];
+	uint16_t magnitude[4];
+	double angle[4];
+	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
+	
+	
 
 	/* vn100 read yaw, pitch, and roll */
 	VN100_SPI_Packet *packet;
 	float yaw, pitch, roll;
-	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+	//packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
 	
-	controller_U.alpha[0];
-	controller_U.alpha[1];
+	controller_U.alpha[0] = 0.3 ;
+	controller_U.alpha[1] = 0.3 ;
 	controller_U.roll = roll;
 	controller_U.pitch = pitch;
 	controller_U.yaw = yaw;
@@ -122,15 +128,10 @@ void SysTick_Handler(void)
 	controller_step();
 		
 	/* servo actuators*/
-	//daq_U.pwm_pd13 = controller_Y.left_t;		// left tail 
-	//daq_U.pwm_pd12 = controller_Y.right_t;		// right tail 
-	//daq_U.pwm_pd14 = controller_Y.left_w;		// left arm-wing
-	//daq_U.pwm_ph11 = controller_Y.right_w;		// right arm-wing
-	
-	daq_U.pwm_pd13 = 5;		// left tail 
-	daq_U.pwm_pd12 = 5;		// right tail 
-	daq_U.pwm_pd14 = 5;		// left arm-wing
-	daq_U.pwm_ph11 = 5;		// right arm-wing 
+	daq_U.pwm_pd12 = controller_Y.left_t;		// left tail 		
+	daq_U.pwm_pd14 = controller_Y.right_t;		// right tail
+	daq_U.pwm_ph11 = 0;		
+	daq_U.pwm_ph10 = 0;
 	
 	/* Step the model for base rate */
 	daq_step();
@@ -176,10 +177,13 @@ int main (void)
 	
 	/* Initilaize the vn100 application */
 	//vn100_initialize_defaults();
-	SPI_initialize();	// vn100 spi initialization ...
+	//SPI_initialize();	// vn100 spi initialization ...
 	
 	/* tare imu */
-	VN100_SPI_Tare(0);
+	//VN100_SPI_Tare(0);
+	
+	/* initialize encoders */
+	AS5048B_initialize();
 
 	/* Systick configuration and enable SysTickHandler interrupt */
 	float dt = SAMPLE_TIME;
