@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.48
+ * Model version      : 1.65
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sat Aug 29 20:32:14 2015
+ * C/C++ source code generated on  : Thu Sep 03 12:59:16 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -35,7 +35,7 @@
 
 /* Block parameters (auto storage) */
 P_daq daq_P = {
-  50.0                                 /* Expression: 50
+  1000.0                               /* Expression: 1000
                                         * Referenced by: '<S2>/pwm_freq'
                                         */
 };

@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.48
+ * Model version      : 1.65
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sat Aug 29 20:32:14 2015
+ * C/C++ source code generated on  : Thu Sep 03 12:59:16 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -38,20 +38,18 @@
 #define USART3_RX_STRING_SIZE          100
 #define USART6_RX_BUFF_SIZE            1000
 #define USART6_RX_STRING_SIZE          100
-#define USART2_RX_BUFF_SIZE            18
-#define USART2_RX_STRING_SIZE          18
 
-/* Global Variable Definition for TIM4 Configuration */
-TIM_TimeBaseInitTypeDef TIM4_TimeBaseStructure;
-TIM_OCInitTypeDef TIM4_OCInitStructure;
+/* Global Variable Definition for TIM2 Configuration */
+TIM_TimeBaseInitTypeDef TIM2_TimeBaseStructure;
+TIM_OCInitTypeDef TIM2_OCInitStructure;
 
 /*Global variable for APB1/APB2 prescaler from RCC_Configuration.c file */
 extern uint32_t RCC_APB1_Prescaler;
 extern uint32_t RCC_APB2_Prescaler;
 
-/* Global Variable Definition for TIM5 Configuration */
-TIM_TimeBaseInitTypeDef TIM5_TimeBaseStructure;
-TIM_OCInitTypeDef TIM5_OCInitStructure;
+/* Global Variable Definition for TIM3 Configuration */
+TIM_TimeBaseInitTypeDef TIM3_TimeBaseStructure;
+TIM_OCInitTypeDef TIM3_OCInitStructure;
 
 /*Global variable for APB1/APB2 prescaler from RCC_Configuration.c file */
 extern uint32_t RCC_APB1_Prescaler;
@@ -158,48 +156,6 @@ static char* USART6_BufferSendPt;
 static uint16_t USART6_NbCharToSend = 0;
 static uint16_t USART6_NbCharSent = 0;
 
-#define USART2_CONFIG_NAME             USART2
-#define USART2_CONFIG_PIN_RX           GPIO_Pin_3
-#define USART2_CONFIG_PIN_TX           GPIO_Pin_2
-#define USART2_CONFIG_PORT_TX          GPIOA
-#define USART2_CONFIG_PORT_RX          GPIOA
-
-/* Enable usart peripheral clocks */
-#define RCC_USART2_ClockCmd()          RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE)
-
-/* Enable GPIO clocks */
-#define USART2_RCC_GPIORx_ClockCmd()   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE)
-#define USART2_RCC_GPIOTx_ClockCmd()
-
-/* Configure AFIO Alternate fonction */
-#define USART2_GPIOTx_PinAFConfig()    GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_USART2)
-#define USART2_GPIORx_PinAFConfig()    GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_USART2)
-
-/* Global Variable Definition for GPIO Configuration */
-static GPIO_InitTypeDef GPIO_InitStructure;
-
-/* Global Variable Definition for UART Configuration */
-static USART_InitTypeDef USART2_InitStructure;
-static USART_ClockInitTypeDef USART2_ClockInitStructure;
-
-/* USART2 interrupt receive */
-#define USART2_IT_RCV                  1
-
-/* USART2 interrupt send */
-#define USART2_IT_SEND                 1
-
-NVIC_InitTypeDef NVIC_USART2_InitStructure;
-static volatile unsigned int USART2_NbrOfDataInBuff = 0;
-static char USART2_RxBuffer[USART2_RX_BUFF_SIZE];
-static char USART2_RxOutputDataBuffer[USART2_RX_STRING_SIZE] = { 0 };
-
-static char* USART2_RxOutputDataBufferPt = USART2_RxOutputDataBuffer;
-static char* USART2_ReadPt = USART2_RxBuffer;
-static char* USART2_WritePt = USART2_RxBuffer;
-static char* USART2_BufferSendPt;
-static uint16_t USART2_NbCharToSend = 0;
-static uint16_t USART2_NbCharSent = 0;
-
 #define USART1_CONFIG_NAME             USART1
 #define USART1_CONFIG_PIN_RX           GPIO_Pin_10
 #define USART1_CONFIG_PIN_TX           GPIO_Pin_9
@@ -297,11 +253,11 @@ ExtY_daq daq_Y;
 RT_MODEL_daq daq_M_;
 RT_MODEL_daq *const daq_M = &daq_M_;
 
-/* Function Declaration for TIM4 Configuration */
-void TIM4_Configuration(void);
+/* Function Declaration for TIM2 Configuration */
+void TIM2_Configuration(void);
 
-/* Function Declaration for TIM5 Configuration */
-void TIM5_Configuration(void);
+/* Function Declaration for TIM3 Configuration */
+void TIM3_Configuration(void);
 
 /* Function Declaration for ADC1 Configuration */
 void ADC1_Init(void);
@@ -343,9 +299,6 @@ void GPIOI_Configuration(void);
 /* Function Declaration for USART6 Configuration */
 void USART6_Config(void);
 
-/* Function Declaration for USART2 Configuration */
-void USART2_Config(void);
-
 /* Function Declaration for USART1 Configuration */
 void USART1_Config(void);
 
@@ -353,123 +306,131 @@ void USART1_Config(void);
 void USART3_Config(void);
 
 /*******************************************************************************
- * Function Name  : TIM4_Configuration
- * Description    : TIM4 PWM output or Input_Capture Configuration
+ * Function Name  : TIM2_Configuration
+ * Description    : TIM2 PWM output or Input_Capture Configuration
  * Input          : -
  *******************************************************************************/
-void TIM4_Configuration(void)
+void TIM2_Configuration(void)
 {
   /* Time base configuration */
   switch (RCC_APB1_Prescaler) {
    case RCC_HCLK_Div4:
-    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
+    TIM2_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
       1312500) - 1;
     break;
 
    case RCC_HCLK_Div8:
-    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
+    TIM2_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
       1312500) - 1;
     break;
 
    case RCC_HCLK_Div16:
-    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
+    TIM2_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
       1312500) - 1;
     break;
 
    default:
-    TIM4_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 1312500)
+    TIM2_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 1312500)
       - 1;
     break;
   }
 
-  TIM4_TimeBaseStructure.TIM_Period = 1312500 / 50 -1;
-  TIM4_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-  TIM4_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(TIM4, &TIM4_TimeBaseStructure);
+  TIM2_TimeBaseStructure.TIM_Period = 1312500 / 50 -1;
+  TIM2_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM2_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM2, &TIM2_TimeBaseStructure);
 
   /* PWM output mode configuration: Channel CH1*/
-  TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-  TIM_OC1Init(TIM4, &TIM4_OCInitStructure);
-  TIM_OC1PreloadConfig(TIM4, TIM_OCPreload_Enable);
+  TIM2_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM2_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM2_OCInitStructure.TIM_Pulse = 50 * TIM2_TimeBaseStructure.TIM_Period / 100;
+  TIM2_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC1Init(TIM2, &TIM2_OCInitStructure);
+  TIM_OC1PreloadConfig(TIM2, TIM_OCPreload_Enable);
 
   /* PWM output mode configuration: Channel CH2*/
-  TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-  TIM_OC2Init(TIM4, &TIM4_OCInitStructure);
-  TIM_OC2PreloadConfig(TIM4, TIM_OCPreload_Enable);
+  TIM2_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM2_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM2_OCInitStructure.TIM_Pulse = 50 * TIM2_TimeBaseStructure.TIM_Period / 100;
+  TIM2_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC2Init(TIM2, &TIM2_OCInitStructure);
+  TIM_OC2PreloadConfig(TIM2, TIM_OCPreload_Enable);
 
   /* PWM output mode configuration: Channel CH3*/
-  TIM4_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM4_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM4_OCInitStructure.TIM_Pulse = 50 * TIM4_TimeBaseStructure.TIM_Period / 100;
-  TIM4_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-  TIM_OC3Init(TIM4, &TIM4_OCInitStructure);
-  TIM_OC3PreloadConfig(TIM4, TIM_OCPreload_Enable);
-  TIM_ARRPreloadConfig(TIM4, ENABLE);
+  TIM2_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM2_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM2_OCInitStructure.TIM_Pulse = 50 * TIM2_TimeBaseStructure.TIM_Period / 100;
+  TIM2_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC3Init(TIM2, &TIM2_OCInitStructure);
+  TIM_OC3PreloadConfig(TIM2, TIM_OCPreload_Enable);
+  TIM_ARRPreloadConfig(TIM2, ENABLE);
 
-  /* TIM4 enable counter */
-  TIM_Cmd(TIM4, ENABLE);
+  /* TIM2 enable counter */
+  TIM_Cmd(TIM2, ENABLE);
 }
 
 /*******************************************************************************
- * Function Name  : TIM5_Configuration
- * Description    : TIM5 PWM output or Input_Capture Configuration
+ * Function Name  : TIM3_Configuration
+ * Description    : TIM3 PWM output or Input_Capture Configuration
  * Input          : -
  *******************************************************************************/
-void TIM5_Configuration(void)
+void TIM3_Configuration(void)
 {
   /* Time base configuration */
   switch (RCC_APB1_Prescaler) {
    case RCC_HCLK_Div4:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
-      21000000) - 1;
+    TIM3_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
+      1312500) - 1;
     break;
 
    case RCC_HCLK_Div8:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
-      21000000) - 1;
+    TIM3_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
+      1312500) - 1;
     break;
 
    case RCC_HCLK_Div16:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
-      21000000) - 1;
+    TIM3_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
+      1312500) - 1;
     break;
 
    default:
-    TIM5_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 21000000)
+    TIM3_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 1312500)
       - 1;
     break;
   }
 
-  TIM5_TimeBaseStructure.TIM_Period = 21000000 / 50 -1;
-  TIM5_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
-  TIM5_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
-  TIM_TimeBaseInit(TIM5, &TIM5_TimeBaseStructure);
+  TIM3_TimeBaseStructure.TIM_Period = 1312500 / 50 -1;
+  TIM3_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM3_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM3, &TIM3_TimeBaseStructure);
 
   /* PWM output mode configuration: Channel CH1*/
-  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
-  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-  TIM_OC1Init(TIM5, &TIM5_OCInitStructure);
-  TIM_OC1PreloadConfig(TIM5, TIM_OCPreload_Enable);
+  TIM3_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM3_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM3_OCInitStructure.TIM_Pulse = 50 * TIM3_TimeBaseStructure.TIM_Period / 100;
+  TIM3_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC1Init(TIM3, &TIM3_OCInitStructure);
+  TIM_OC1PreloadConfig(TIM3, TIM_OCPreload_Enable);
 
   /* PWM output mode configuration: Channel CH2*/
-  TIM5_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
-  TIM5_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
-  TIM5_OCInitStructure.TIM_Pulse = 50 * TIM5_TimeBaseStructure.TIM_Period / 100;
-  TIM5_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
-  TIM_OC2Init(TIM5, &TIM5_OCInitStructure);
-  TIM_OC2PreloadConfig(TIM5, TIM_OCPreload_Enable);
-  TIM_ARRPreloadConfig(TIM5, ENABLE);
+  TIM3_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM3_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM3_OCInitStructure.TIM_Pulse = 50 * TIM3_TimeBaseStructure.TIM_Period / 100;
+  TIM3_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC2Init(TIM3, &TIM3_OCInitStructure);
+  TIM_OC2PreloadConfig(TIM3, TIM_OCPreload_Enable);
 
-  /* TIM5 enable counter */
-  TIM_Cmd(TIM5, ENABLE);
+  /* PWM output mode configuration: Channel CH3*/
+  TIM3_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM1;
+  TIM3_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  TIM3_OCInitStructure.TIM_Pulse = 50 * TIM3_TimeBaseStructure.TIM_Period / 100;
+  TIM3_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_High;
+  TIM_OC3Init(TIM3, &TIM3_OCInitStructure);
+  TIM_OC3PreloadConfig(TIM3, TIM_OCPreload_Enable);
+  TIM_ARRPreloadConfig(TIM3, ENABLE);
+
+  /* TIM3 enable counter */
+  TIM_Cmd(TIM3, ENABLE);
 }
 
 /*******************************************************************************
@@ -607,24 +568,36 @@ void GPIOA_Configuration(void)
   GPIO_DeInit(GPIOA);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource0, GPIO_AF_TIM2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource1, GPIO_AF_TIM2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource2, GPIO_AF_TIM2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_3;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource3, GPIO_AF_TIM2);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_4;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
   GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
@@ -637,14 +610,20 @@ void GPIOA_Configuration(void)
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource6, GPIO_AF_TIM3);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
-  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOA_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOA, &GPIOA_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource7, GPIO_AF_TIM3);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
   GPIOA_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOA_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOA_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -687,14 +666,20 @@ void GPIOB_Configuration(void)
   GPIO_DeInit(GPIOB);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_0;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource0, GPIO_AF_TIM3);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_1;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource1, GPIO_AF_TIM3);
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_2;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -722,9 +707,12 @@ void GPIOB_Configuration(void)
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_9;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOB_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOB, &GPIOB_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOB, GPIO_PinSource9, GPIO_AF_TIM11);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM11, ENABLE);
   GPIOB_InitStructure.GPIO_Pin = GPIO_Pin_10;
   GPIOB_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOB_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -1513,84 +1501,6 @@ void USART6_IRQHandler(void)
 }
 
 /*******************************************************************************
- * Function Name  : USART2_Config
- * Description    : USART Configuration
- * Input          : -
- *******************************************************************************/
-void USART2_Config(void)
-{
-  // USART2 IO configuration ------------------------------------//
-  // Enable GPIO clock
-  USART2_RCC_GPIORx_ClockCmd();
-  USART2_RCC_GPIOTx_ClockCmd();
-
-  // Set USART_TX as PP AF
-  GPIO_InitStructure.GPIO_Pin = USART2_CONFIG_PIN_TX;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(USART2_CONFIG_PORT_TX, &GPIO_InitStructure);
-
-  // Set USART_RX as Pull-Up
-  GPIO_InitStructure.GPIO_Pin = USART2_CONFIG_PIN_RX;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
-  GPIO_Init(USART2_CONFIG_PORT_RX, &GPIO_InitStructure);
-
-  // configure AFIO
-  USART2_GPIOTx_PinAFConfig();
-  USART2_GPIORx_PinAFConfig();
-
-  //USART2 clock enable
-  RCC_USART2_ClockCmd();
-  USART2_InitStructure.USART_BaudRate = 115200;
-  USART2_InitStructure.USART_WordLength = USART_WordLength_8b;
-  USART2_InitStructure.USART_StopBits = USART_StopBits_1;
-  USART2_InitStructure.USART_Parity = USART_Parity_No;
-  USART2_InitStructure.USART_HardwareFlowControl =
-    USART_HardwareFlowControl_None;
-  USART2_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-  USART2_ClockInitStructure.USART_Clock = USART_Clock_Disable;
-  USART2_ClockInitStructure.USART_CPOL = USART_CPOL_Low;
-  USART2_ClockInitStructure.USART_CPHA = USART_CPHA_2Edge;
-  USART2_ClockInitStructure.USART_LastBit = USART_LastBit_Disable;
-  USART_Init(USART2_CONFIG_NAME, &USART2_InitStructure);
-  USART_ClockInit(USART2_CONFIG_NAME, &USART2_ClockInitStructure);
-
-  // Enable USART2 selected from PIL config model.
-  USART_Cmd(USART2_CONFIG_NAME, ENABLE);
-}
-
-/*******************************************************************************
- * Function Name  : USART2_IRQHandler
- * Description    : USART interrupt reception management.
- * Input          : -
- *******************************************************************************/
-void USART2_IRQHandler(void);
-void USART2_IRQHandler(void)
-{
-  if (USART_GetITStatus(USART2, USART_IT_RXNE) != RESET) {
-    /* Read one byte from the receive data register */
-    if (USART2_NbrOfDataInBuff < USART2_RX_BUFF_SIZE) {
-      *USART2_WritePt++ = USART2->DR;
-      USART2_NbrOfDataInBuff++;
-      if (USART2_WritePt > &USART2_RxBuffer[USART2_RX_BUFF_SIZE])
-        USART2_WritePt = USART2_RxBuffer;
-    } else {
-      /* Take care: Char is lost. Increase Buffer size.*/
-      (void)USART2->DR;
-    }
-  }
-
-  if (USART_GetITStatus(USART2, USART_IT_TXE) != RESET) {
-    USART_SendData(USART2, *USART2_BufferSendPt++);
-    USART2_NbCharSent++;
-    if (--USART2_NbCharToSend <= 0)
-      USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
-  }
-}
-
-/*******************************************************************************
  * Function Name  : USART1_Config
  * Description    : USART Configuration
  * Input          : -
@@ -1747,20 +1657,20 @@ void USART3_IRQHandler(void)
 }
 
 /*******************************************************************************
- * Function Name  : TIM4_IRQHandler
- * Description    : This function handles TIM4 interrupt request.
+ * Function Name  : TIM2_IRQHandler
+ * Description    : This function handles TIM2 interrupt request.
  * Input          : -
  *******************************************************************************/
-void TIM4_IRQHandler(void)
+void TIM2_IRQHandler(void)
 {
 }
 
 /*******************************************************************************
- * Function Name  : TIM5_IRQHandler
- * Description    : This function handles TIM5 interrupt request.
+ * Function Name  : TIM3_IRQHandler
+ * Description    : This function handles TIM3 interrupt request.
  * Input          : -
  *******************************************************************************/
-void TIM5_IRQHandler(void)
+void TIM3_IRQHandler(void)
 {
 }
 
@@ -1785,7 +1695,7 @@ void daq_step(void)
     char* charToSend;
 
 #endif
-//
+
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
 
@@ -1799,15 +1709,6 @@ void daq_step(void)
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
     int OffsetADC1_L = 0;
-    //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
-    //int i;                             //Loop counter
-
-#ifndef USART2_IT_SEND
-
-    u16 i = 0;
-    char* charToSend;
-
-#endif
 
     /* user code (Output function Body) */
 #ifndef USART1_IT_RCV
@@ -1979,53 +1880,7 @@ void daq_step(void)
 
 #endif
 
-#ifndef USART2_IT_RCV
-
-    /* Pulling reception: Get received char while any and less than buff size*/
-    while ((USART2->SR & USART_FLAG_RXNE) != (uint16_t)RESET &&
-           USART2_NbrOfDataInBuff < 18) {
-      /* Read one byte from the receive data register */
-      *USART2_WritePt++ = USART2->DR;
-      USART2_NbrOfDataInBuff++;
-      if (USART2_WritePt > &USART2_RxBuffer[18])
-        USART2_WritePt = USART2_RxBuffer;
-    }
-
-#endif
-
-    /* Disable Rx interrupt during processing */
-    USART_ITConfig(USART2, USART_IT_RXNE, DISABLE);
-
-    /* Processing when data has been received only*/
-    if (USART2_NbrOfDataInBuff ) {
-      for (i = 0; i< 18;i++) {
-        USART2_RxOutputDataBuffer[i] = *USART2_ReadPt++;
-        USART2_NbrOfDataInBuff--;
-        NbData_Read++;
-        if (USART2_ReadPt > &USART2_RxBuffer[18]) {
-          USART2_ReadPt = USART2_RxBuffer;
-        }
-
-        if (USART2_NbrOfDataInBuff == 0) {
-          break;
-        }
-      }
-    }
-
-    daq_Y.usart2_NbRcv = NbData_Read;
-
-    /* Enable Rx interrupt after processing */
-    USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-    USART2_RxOutputDataBufferPt = USART2_RxOutputDataBuffer;
-
-    {
-      int_T i1;
-      uint8_T *y1 = &daq_Y.usart2_RcvVal[0];
-      for (i1=0; i1 < 18; i1++) {
-        y1[i1] = *USART2_RxOutputDataBufferPt++;
-      }
-    }
-
+    daq_B.GPIO_Read3 = GPIO_ReadInputData(GPIOE);
     daq_B.GPIO_Read1 = GPIO_ReadInputData(GPIOB);
     daq_B.GPIO_Read2 = GPIO_ReadInputData(GPIOA);
     daq_B.GPIO_Read4 = GPIO_ReadInputData(GPIOI);
@@ -2034,9 +1889,9 @@ void daq_step(void)
     /* DigitalClock: '<S2>/Digital Clock' */
     daq_Y.time = ((daq_M->Timing.clockTick0) * 0.2);
 
-    /* S-Function Block: <S9>/USART_Send4 */
+    /* S-Function Block: <S10>/USART_Send4 */
 
-    /* S-Function Block: <S9>/USART_Receive4 */
+    /* S-Function Block: <S10>/USART_Receive4 */
 
     /* S-Function Block: <S11>/USART_Send4 */
 
@@ -2057,18 +1912,53 @@ void daq_step(void)
     /* Outport: '<Root>/do2' */
     daq_Y.do2 = 0.0;
 
-    /* Outport: '<Root>/do3' */
-    daq_Y.do3 = 0.0;
+    /* Outport: '<Root>/usart2_NbRcv' */
+    daq_Y.usart2_NbRcv = 0.0;
 
-    /* Outport: '<Root>/do4' */
-    daq_Y.do4 = 0.0;
+    /* Outport: '<Root>/usart2_RcvVal' */
+    daq_Y.usart2_RcvVal = 0.0;
 
-    /* Outport: '<Root>/do5' */
-    daq_Y.do5 = 0.0;
+    /* S-Function Block: <S6>/GPIO_Read3 */
 
-    /* S-Function Block: <S10>/USART_Receive4 */
+    /* Outport: '<Root>/pe2' incorporates:
+     *  MATLAB Function: '<S6>/MATLAB Function'
+     */
+    /* MATLAB Function 'DAQ/GPIO/MATLAB Function': '<S9>:1' */
+    /*  Read general purpose input */
+    /*  gpi : digital input */
+    /*  gpi1: bit-1 */
+    /*  gpi2: bit-2 */
+    /*  gpi3: bit-3 */
+    /*  ... */
+    /*  % gpi16: bit-16 */
+    /*  by Alireza Ramezani, 8-30-2015, Champaign, IL */
+    /* '<S9>:1:15' */
+    /* '<S9>:1:16' */
+    /* '<S9>:1:17' */
+    /* '<S9>:1:18' */
+    /* '<S9>:1:19' */
+    /* '<S9>:1:20' */
+    /* '<S9>:1:21' */
+    /* '<S9>:1:22' */
+    /* '<S9>:1:23' */
+    /* '<S9>:1:24' */
+    /* '<S9>:1:25' */
+    /* '<S9>:1:26' */
+    /* '<S9>:1:27' */
+    /* '<S9>:1:28' */
+    /* '<S9>:1:29' */
+    /* '<S9>:1:30' */
+    daq_Y.pe2 = (uint16_T)((int32_T)((uint32_T)daq_B.GPIO_Read3 >> 2) & 1);
 
-    /* S-Function Block: <S10>/USART_Send4 */
+    /* Outport: '<Root>/pe3' incorporates:
+     *  MATLAB Function: '<S6>/MATLAB Function'
+     */
+    daq_Y.pe3 = (uint16_T)((int32_T)((uint32_T)daq_B.GPIO_Read3 >> 3) & 1);
+
+    /* Outport: '<Root>/pe4' incorporates:
+     *  MATLAB Function: '<S6>/MATLAB Function'
+     */
+    daq_Y.pe4 = (uint16_T)((int32_T)((uint32_T)daq_B.GPIO_Read3 >> 4) & 1);
 
     /* S-Function Block: <S6>/GPIO_Read1 */
 
@@ -2178,34 +2068,6 @@ void daq_step(void)
 
 #endif
 
-#ifdef USART2_IT_SEND
-
-    USART2_BufferSendPt = (char *)&daq_U.usart2_SendVal[0];
-    USART2_NbCharToSend = daq_U.usart2_Nb2Send;
-    if (USART2_NbCharToSend) {
-      /* Initialize nb of char sent to 0 */
-      USART2_NbCharSent = 0;
-
-      /* Send char is allowed */
-      USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
-    }
-
-    daq_B.USART_Send4_m = USART2_NbCharSent;
-
-#endif
-
-#ifndef USART2_IT_SEND
-
-    charToSend = (char *)&daq_U.usart2_SendVal[0];
-    daq_B.USART_Send4_m = 0;
-    for (i=0; i<daq_U.usart2_Nb2Send; i++) {
-      while (USART_GetFlagStatus(USART2, USART_FLAG_TXE) == RESET) ;
-      USART_SendData(USART2, *charToSend++);
-      daq_B.USART_Send4_m++;
-    }
-
-#endif
-
     GPIO_ToggleBits(GPIOI,GPIO_Pin_5);
     GPIO_ToggleBits(GPIOI,GPIO_Pin_6);
     GPIO_ToggleBits(GPIOI,GPIO_Pin_7);
@@ -2216,104 +2078,123 @@ void daq_step(void)
   /* Update for S-Function (TIMERS_Config): '<S7>/Timers' */
 
   /* Timer frequency is an input port */
-  TIM4->ARR = 1312500 / daq_P.pwm_freq_Value -1;
-  if (daq_U.pwm_pd12 < 0) {
+  TIM2->ARR = 1312500 / daq_P.pwm_freq_Value -1;
+  if (daq_U.pwm_pa0 < 0) {
     /* Disable output and complementary output */
-    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+    //            TIM2->BDTR &= 0x7FFF;  //MOE = 0
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->BDTR &= 0xF7FF;              //OSSR = 0
 
-    //            TIM4->CCER |= 0x4;     //CC1NE = 1
-    //            TIM4->CCER &= 0xFFFE;  //CC1E = 0
-    TIM4->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
-    TIM4->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
+    //            TIM2->CCER |= 0x4;     //CC1NE = 1
+    //            TIM2->CCER &= 0xFFFE;  //CC1E = 0
+    TIM2->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
+    TIM2->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
   } else {
     // Enable output and complementary output and update dutyCycle
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM4->CCR1 = daq_U.pwm_pd12 * TIM4->ARR / 100;
+    TIM2->CCR1 = daq_U.pwm_pa0 * TIM2->ARR / 100;
   }
 
-  if (daq_U.pwm_pd13 < 0) {
+  if (daq_U.pwm_pa1 < 0) {
     /* Disable output and complementary output */
-    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+    //            TIM2->BDTR &= 0x7FFF;  //MOE = 0
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->BDTR &= 0xF7FF;              //OSSR = 0
 
-    //            TIM4->CCER |= 0x40;    //CC2NE = 1
-    //            TIM4->CCER &= 0xFFEF;  //CC2E = 0
-    TIM4->CCER &= 0xFFAF;              //CC2E = 0 CC2NE = 0
-    TIM4->CR2 &= 0xF3FF;               //OIS2 = 0 OIS2N = 0
+    //            TIM2->CCER |= 0x40;    //CC2NE = 1
+    //            TIM2->CCER &= 0xFFEF;  //CC2E = 0
+    TIM2->CCER &= 0xFFAF;              //CC2E = 0 CC2NE = 0
+    TIM2->CR2 &= 0xF3FF;               //OIS2 = 0 OIS2N = 0
   } else {
     /* Enable output and complementary output and update dutyCycle*/
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
 
     /* Channel2 duty cycle is an input port */
-    TIM4->CCR2 = daq_U.pwm_pd13 * TIM4->ARR / 100;
+    TIM2->CCR2 = daq_U.pwm_pa1 * TIM2->ARR / 100;
   }
 
-  if (daq_U.pwm_pd14 < 0) {
+  if (daq_U.pwm_pa2 < 0) {
     /* Disable output and complementary output */
-    //            TIM4->BDTR &= 0x7FFF;  //MOE = 0
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->BDTR &= 0xF7FF;              //OSSR = 0
+    //            TIM2->BDTR &= 0x7FFF;  //MOE = 0
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->BDTR &= 0xF7FF;              //OSSR = 0
 
-    //            TIM4->CCER |= 0x400;   //CC3NE = 1
-    //            TIM4->CCER &= 0xFEFF;  //CC3E = 0
-    TIM4->CCER &= 0xFAFF;              //CC3E = 0 CC3NE = 0
-    TIM4->CR2 &= 0xCFFF;               //OIS3 = 0 OIS3N = 0
+    //            TIM2->CCER |= 0x400;   //CC3NE = 1
+    //            TIM2->CCER &= 0xFEFF;  //CC3E = 0
+    TIM2->CCER &= 0xFAFF;              //CC3E = 0 CC3NE = 0
+    TIM2->CR2 &= 0xCFFF;               //OIS3 = 0 OIS3N = 0
   } else {
     /* Enable output and complementary output and update dutyCycle*/
-    TIM4->BDTR |= 0x8000;              //MOE = 1
-    TIM4->CCER |= 0x500;               //CC3NE = 1 and CC3E = 1
+    TIM2->BDTR |= 0x8000;              //MOE = 1
+    TIM2->CCER |= 0x500;               //CC3NE = 1 and CC3E = 1
 
     /* Channel3 duty cycle is an input port */
-    TIM4->CCR3 = daq_U.pwm_pd14 * TIM4->ARR / 100;
+    TIM2->CCR3 = daq_U.pwm_pa2 * TIM2->ARR / 100;
   }
 
-  /* Update for S-Function (TIMERS_Config): '<S7>/Timers1' */
+  /* Update for S-Function (TIMERS_Config): '<S7>/Timers2' */
 
   /* Timer frequency is an input port */
-  TIM5->ARR = 21000000 / daq_P.pwm_freq_Value -1;
-  if (daq_U.pwm_ph11 < 0) {
+  TIM3->ARR = 1312500 / daq_P.pwm_freq_Value -1;
+  if (daq_U.pwm_pa6 < 0) {
     /* Disable output and complementary output */
-    //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
-    TIM5->BDTR |= 0x8000;              //MOE = 1
-    TIM5->BDTR &= 0xF7FF;              //OSSR = 0
+    //            TIM3->BDTR &= 0x7FFF;  //MOE = 0
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->BDTR &= 0xF7FF;              //OSSR = 0
 
-    //            TIM5->CCER |= 0x4;     //CC1NE = 1
-    //            TIM5->CCER &= 0xFFFE;  //CC1E = 0
-    TIM5->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
-    TIM5->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
+    //            TIM3->CCER |= 0x4;     //CC1NE = 1
+    //            TIM3->CCER &= 0xFFFE;  //CC1E = 0
+    TIM3->CCER &= 0xFFFA;              //CC1E = 0 CC1NE = 0
+    TIM3->CR2 &= 0xFCFF;               //OIS1 = 0 OIS1N = 0
   } else {
     // Enable output and complementary output and update dutyCycle
-    TIM5->BDTR |= 0x8000;              //MOE = 1
-    TIM5->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->CCER |= 0x5;                 //CC1NE = 1 and CC1E = 1
 
     // Channel1 duty cycle is an input port
-    TIM5->CCR1 = daq_U.pwm_ph11 * TIM5->ARR / 100;
+    TIM3->CCR1 = daq_U.pwm_pa6 * TIM3->ARR / 100;
   }
 
-  if (daq_U.pwm_ph10 < 0) {
+  if (daq_U.pwm_pa7 < 0) {
     /* Disable output and complementary output */
-    //            TIM5->BDTR &= 0x7FFF;  //MOE = 0
-    TIM5->BDTR |= 0x8000;              //MOE = 1
-    TIM5->BDTR &= 0xF7FF;              //OSSR = 0
+    //            TIM3->BDTR &= 0x7FFF;  //MOE = 0
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->BDTR &= 0xF7FF;              //OSSR = 0
 
-    //            TIM5->CCER |= 0x40;    //CC2NE = 1
-    //            TIM5->CCER &= 0xFFEF;  //CC2E = 0
-    TIM5->CCER &= 0xFFAF;              //CC2E = 0 CC2NE = 0
-    TIM5->CR2 &= 0xF3FF;               //OIS2 = 0 OIS2N = 0
+    //            TIM3->CCER |= 0x40;    //CC2NE = 1
+    //            TIM3->CCER &= 0xFFEF;  //CC2E = 0
+    TIM3->CCER &= 0xFFAF;              //CC2E = 0 CC2NE = 0
+    TIM3->CR2 &= 0xF3FF;               //OIS2 = 0 OIS2N = 0
   } else {
     /* Enable output and complementary output and update dutyCycle*/
-    TIM5->BDTR |= 0x8000;              //MOE = 1
-    TIM5->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->CCER |= 0x50;                //CC2NE = 1 and CC2E = 1
 
     /* Channel2 duty cycle is an input port */
-    TIM5->CCR2 = daq_U.pwm_ph10 * TIM5->ARR / 100;
+    TIM3->CCR2 = daq_U.pwm_pa7 * TIM3->ARR / 100;
+  }
+
+  if (daq_U.pwm_pb0 < 0) {
+    /* Disable output and complementary output */
+    //            TIM3->BDTR &= 0x7FFF;  //MOE = 0
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->BDTR &= 0xF7FF;              //OSSR = 0
+
+    //            TIM3->CCER |= 0x400;   //CC3NE = 1
+    //            TIM3->CCER &= 0xFEFF;  //CC3E = 0
+    TIM3->CCER &= 0xFAFF;              //CC3E = 0 CC3NE = 0
+    TIM3->CR2 &= 0xCFFF;               //OIS3 = 0 OIS3N = 0
+  } else {
+    /* Enable output and complementary output and update dutyCycle*/
+    TIM3->BDTR |= 0x8000;              //MOE = 1
+    TIM3->CCER |= 0x500;               //CC3NE = 1 and CC3E = 1
+
+    /* Channel3 duty cycle is an input port */
+    TIM3->CCR3 = daq_U.pwm_pb0 * TIM3->ARR / 100;
   }
 
   /* Update absolute time for base rate */
@@ -2400,17 +2281,6 @@ void daq_initialize(void)
   USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);
 
   /* Usart configuration */
-  USART2_Config();
-
-  /* Enable USART2 Rcv interrupt */
-  NVIC_USART2_InitStructure.NVIC_IRQChannel = USART2_IRQn ;
-  NVIC_USART2_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-  NVIC_USART2_InitStructure.NVIC_IRQChannelSubPriority = 0;
-  NVIC_USART2_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-  NVIC_Init(&NVIC_USART2_InitStructure);
-  USART_ITConfig(USART2, USART_IT_RXNE, ENABLE);
-
-  /* Usart configuration */
   USART1_Config();
 
   /* Enable USART1 Rcv interrupt */
@@ -2435,7 +2305,7 @@ void daq_initialize(void)
   /* Start for S-Function (TIMERS_Config): '<S7>/Timers' */
   ;
 
-  /* Start for S-Function (TIMERS_Config): '<S7>/Timers1' */
+  /* Start for S-Function (TIMERS_Config): '<S7>/Timers2' */
   ;
 
   /* Start for S-Function (ADC_Init): '<S1>/ADC_Init' */
@@ -2475,9 +2345,6 @@ void daq_initialize(void)
   /* Start for S-Function (USART_Config): '<S4>/USART_Config' */
   ;
 
-  /* Start for S-Function (USART_Config): '<S4>/USART_Config1' */
-  ;
-
   /* Start for S-Function (USART_Config): '<S4>/USART_Config2' */
   ;
 
@@ -2486,11 +2353,11 @@ void daq_initialize(void)
 
   /* user code (Start function Trailer) */
 
-  /* TIM4 Configuration */
-  TIM4_Configuration();
+  /* TIM2 Configuration */
+  TIM2_Configuration();
 
-  /* TIM5 Configuration */
-  TIM5_Configuration();
+  /* TIM3 Configuration */
+  TIM3_Configuration();
 
   /* ADC1 START */
   ADC1_Start();

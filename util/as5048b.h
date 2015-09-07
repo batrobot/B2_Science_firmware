@@ -39,32 +39,32 @@
 #include "daq.h"
 #include "rtwtypes.h"
 
-/* Macros */
-#define AS5048B_RCC_APBPeriph RCC_APB1Periph_I2C1
-#define AS5048B_RCC_AHBPeriph_GPIO RCC_AHB1Periph_GPIOB
-#define AS5048B_GPIO_Init GPIO_InitB
-#define AS5048B_I2C_Initx I2C_Init1
-#define AS5048B_GPIO GPIOB
-#define AS5048B_GPIO_Pin_CLK GPIO_Pin_6
-#define AS5048B_GPIO_Pin_SDA GPIO_Pin_7
-#define AS5048B_GPIO_PinSourceCLK GPIO_PinSource6
-#define AS5048B_GPIO_PinSourceSDA GPIO_PinSource7
+/* Macros that used to initialize I2C for AS5048B */
+#define AS5048B_RCC_APBPeriph RCC_APB1Periph_I2C3
+#define AS5048B_RCC_AHBPeriph_GPIO RCC_AHB1Periph_GPIOH
+#define AS5048B_GPIO_Init GPIO_InitH
+#define AS5048B_I2C_Initx I2C_Init3
+#define AS5048B_GPIO GPIOH
+#define AS5048B_GPIO_Pin_CLK GPIO_Pin_7
+#define AS5048B_GPIO_Pin_SDA GPIO_Pin_8
+#define AS5048B_GPIO_PinSourceCLK GPIO_PinSource7
+#define AS5048B_GPIO_PinSourceSDA GPIO_PinSource8
 #define AS5048B_GPIO_Speed GPIO_Speed_100MHz
-#define AS5048B_GPIO_AF_I2Cx GPIO_AF_I2C1
-#define AS5048B_I2Cx I2C1
-#define AS5048B_CLOCKSPEED 100000
+#define AS5048B_GPIO_AF_I2Cx GPIO_AF_I2C3
+#define AS5048B_I2Cx I2C3
+#define AS5048B_CLOCKSPEED 400000
 
-/* MACROS */
+/* some redundent MACROS */
 #define PI 3.141592654
 #define DEG2RAD(x) x*PI/180
 #define RAD2DEG(x) x*180/PI
-#define TIME_OUT_DELAY 1000 // time out delay for I2C talks
+#define TIME_OUT_DELAY 100 // time out delay for I2C talks
 
 // Default addresses for AS5048B
 #define AS5048B_ADDRESS_FACTORY 0x80 // 10000 + ( A1 & A2 to GND)
-#define AS5048B_ADDRESS_A 0x81 // 10000 + ( A1 High & A2 to GND)
-#define AS5048B_ADDRESS_B 0x82 // 10000 + ( A1 GND & A2 to High)
-#define AS5048B_ADDRESS_C 0x83 // 10000 + ( A1 High & A2 to High)
+#define AS5048B_ADDRESS_A 0x82 // 10000 + ( A1 GND & A2 to High)
+#define AS5048B_ADDRESS_B 0x84 // 10000 + ( A1 High & A2 to GND)
+#define AS5048B_ADDRESS_C 0x86 // 10000 + ( A1 High & A2 to High)
 #define AS5048B_PROG_REG 0x03
 #define AS5048B_ADDR_REG 0x15
 #define AS5048B_ZEROMSB_REG 0x16 //bits 0..7
@@ -76,6 +76,16 @@
 #define AS5048B_ANGLMSB_REG 0xFE //bits 0..7
 #define AS5048B_ANGLLSB_REG 0xFF //bits 0..5
 #define AS5048B_RESOLUTION 16384.0 //14 bits
+
+// Diagnositic flags
+#define AS5048B_DIAG_OCF 0x01
+#define AS5048B_DIAG_COF 0x02
+#define AS5048B_DIAG_COMPLOW 0x04
+#define AS5048B_DIAG_COMPHIGH 0x08
+#define AS5048B_DIAG_OCF_OFFSET 0
+#define AS5048B_DIAG_COF_OFFSET 1
+#define AS5048B_DIAG_COMPLOW_OFFSET 2
+#define AS5048B_DIAG_COMPHIGH_OFFSET 3
 
 //unit consts - just to make the units more readable
 #define U_RAW 1
@@ -93,6 +103,8 @@
 extern boolean_T TIME_OUT_ERR;
 extern uint8_t _chipAddress;
 extern boolean_T _clockWise;
+extern uint8_t _numEncoders;
+extern uint8_t	_encAddressList[4];
 
 
 /* routines */
@@ -110,14 +122,6 @@ uint8_t	AS5048B_getAutoGain(void);
 uint8_t	AS5048B_getDiagReg(void); 
 uint16_t AS5048B_magnitudeR(void); 
 double AS5048B_angleR(int unit, boolean_T newVal); 
-
-
-
-
-
-
-
-
 
 
 

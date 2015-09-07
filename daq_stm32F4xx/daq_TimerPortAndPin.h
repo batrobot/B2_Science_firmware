@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.48
+ * Model version      : 1.65
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sat Aug 29 20:32:14 2015
+ * C/C++ source code generated on  : Thu Sep 03 12:59:16 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -32,6 +32,24 @@
 
 #ifndef RTW_HEADER_daq_TimerPortAndPin_h_
 #define RTW_HEADER_daq_TimerPortAndPin_h_
+#define GPIO_TIM2_PORT                 GPIOA
+#define GPIO_TIM2_PIN                  GPIO_Pin_0
+#define GPIO_TIM2_PORT                 GPIOA
+#define GPIO_TIM2_PIN                  GPIO_Pin_1
+#define GPIO_TIM2_PORT                 GPIOA
+#define GPIO_TIM2_PIN                  GPIO_Pin_2
+#define GPIO_TIM2_PORT                 GPIOA
+#define GPIO_TIM2_PIN                  GPIO_Pin_3
+#define GPIO_TIM3_PORT                 GPIOA
+#define GPIO_TIM3_PIN                  GPIO_Pin_6
+#define GPIO_TIM3_PORT                 GPIOA
+#define GPIO_TIM3_PIN                  GPIO_Pin_7
+#define GPIO_TIM3_PORT                 GPIOB
+#define GPIO_TIM3_PIN                  GPIO_Pin_0
+#define GPIO_TIM3_PORT                 GPIOB
+#define GPIO_TIM3_PIN                  GPIO_Pin_1
+#define GPIO_TIM11_PORT                GPIOB
+#define GPIO_TIM11_PIN                 GPIO_Pin_9
 #define GPIO_TIM4_PORT                 GPIOD
 #define GPIO_TIM4_PIN                  GPIO_Pin_12
 #define GPIO_TIM4_PORT                 GPIOD

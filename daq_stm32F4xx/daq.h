@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.48
+ * Model version      : 1.65
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sat Aug 29 20:32:14 2015
+ * C/C++ source code generated on  : Thu Sep 03 12:59:16 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -56,7 +56,7 @@
 
 /* Block signals (auto storage) */
 typedef struct {
-  uint16_T USART_Send4_m;              /* '<S10>/USART_Send4' */
+  uint16_T GPIO_Read3;                 /* '<S6>/GPIO_Read3' */
   uint16_T GPIO_Read1;                 /* '<S6>/GPIO_Read1' */
   uint16_T GPIO_Read2;                 /* '<S6>/GPIO_Read2' */
   uint16_T GPIO_Read4;                 /* '<S6>/GPIO_Read4' */
@@ -65,9 +65,9 @@ typedef struct {
 
 /* External inputs (root inport signals with auto storage) */
 typedef struct {
-  int16_T pwm_pd12;                    /* '<Root>/pwm_pd12' */
-  int16_T pwm_ph11;                    /* '<Root>/pwm_ph11' */
-  real_T pwm_pi5;                      /* '<Root>/pwm_pi5' */
+  int16_T pwm_pa0;                     /* '<Root>/pwm_pa0' */
+  int16_T pwm_pa1;                     /* '<Root>/pwm_pa1' */
+  int16_T pwm_pa2;                     /* '<Root>/pwm_pa2' */
   uint16_T usart1_Nb2Send;             /* '<Root>/usart1_Nb2Send' */
   uint8_T usart1_SendVal[1000];        /* '<Root>/usart1_SendVal' */
   uint16_T usart3_Nb2Send;             /* '<Root>/usart3_Nb2Send' */
@@ -89,13 +89,11 @@ typedef struct {
   real_T di13;                         /* '<Root>/di13' */
   real_T di14;                         /* '<Root>/di14' */
   real_T di15;                         /* '<Root>/di15' */
-  uint16_T usart2_Nb2Send;             /* '<Root>/usart2_Nb2Send' */
-  uint8_T usart2_SendVal[1000];        /* '<Root>/usart2_SendVal' */
-  real_T pwm_pi6;                      /* '<Root>/pwm_pi6' */
-  real_T pwm_pi7;                      /* '<Root>/pwm_pi7' */
-  int16_T pwm_pd13;                    /* '<Root>/pwm_pd13' */
-  int16_T pwm_pd14;                    /* '<Root>/pwm_pd14' */
-  int16_T pwm_ph10;                    /* '<Root>/pwm_ph10' */
+  real_T usart2_Nb2Send;               /* '<Root>/usart2_Nb2Send' */
+  real_T usart2_SendVal;               /* '<Root>/usart2_SendVal' */
+  int16_T pwm_pa6;                     /* '<Root>/pwm_pa6' */
+  int16_T pwm_pa7;                     /* '<Root>/pwm_pa7' */
+  int16_T pwm_pb0;                     /* '<Root>/pwm_pb0' */
 } ExtU_daq;
 
 /* External outputs (root outports fed by signals with auto storage) */
@@ -115,17 +113,17 @@ typedef struct {
   real_T Estop;                        /* '<Root>/Estop' */
   real_T do1;                          /* '<Root>/do1' */
   real_T do2;                          /* '<Root>/do2' */
-  real_T do3;                          /* '<Root>/do3' */
-  real_T do4;                          /* '<Root>/do4' */
-  real_T do5;                          /* '<Root>/do5' */
   real_T imuData;                      /* '<Root>/imuData' */
   real_T usart2_NbRcv;                 /* '<Root>/usart2_NbRcv' */
-  uint8_T usart2_RcvVal[18];           /* '<Root>/usart2_RcvVal' */
+  real_T usart2_RcvVal;                /* '<Root>/usart2_RcvVal' */
+  uint16_T pe2;                        /* '<Root>/pe2' */
+  uint16_T pe3;                        /* '<Root>/pe3' */
+  uint16_T pe4;                        /* '<Root>/pe4' */
 } ExtY_daq;
 
 /* Parameters (auto storage) */
 struct P_daq_ {
-  real_T pwm_freq_Value;               /* Expression: 50
+  real_T pwm_freq_Value;               /* Expression: 1000
                                         * Referenced by: '<S2>/pwm_freq'
                                         */
 };
@@ -186,8 +184,8 @@ extern RT_MODEL_daq *const daq_M;
  * '<S6>'   : 'daq/DAQ/GPIO'
  * '<S7>'   : 'daq/DAQ/PWM'
  * '<S8>'   : 'daq/DAQ/USART'
- * '<S9>'   : 'daq/DAQ/USART/USART1'
- * '<S10>'  : 'daq/DAQ/USART/USART2'
+ * '<S9>'   : 'daq/DAQ/GPIO/MATLAB Function'
+ * '<S10>'  : 'daq/DAQ/USART/USART1'
  * '<S11>'  : 'daq/DAQ/USART/USART3'
  * '<S12>'  : 'daq/DAQ/USART/USART6'
  */

@@ -39,11 +39,12 @@ uint8_t		AS5048B_readReg8(uint8_t address);
 void		AS5048B_writeReg(uint8_t address, uint8_t value);
 double		AS5048B_convertAngle(int unit, double angle); 
 
-/* externs vars */
-uint8_t _chipAddress = AS5048B_ADDRESS_FACTORY;
+/* initialize externs vars */
 boolean_T TIME_OUT_ERR = false;
 boolean_T _clockWise = false;
-
+uint8_t _numEncoders = 4;
+uint8_t	_encAddressList[4] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_C};
+uint8_t _chipAddress = AS5048B_ADDRESS_FACTORY;
 
 /*******************************************************************************
 * Function Name  : AS5048B_initialize_I2C
@@ -93,18 +94,32 @@ void AS5048B_initialize_I2C(void){
 *******************************************************************************/
 void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag, uint16_t *magnitude,double *angle)
 {
-	uint8_t numEncoders = 4;
-	uint8_t	encAddressList[4] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_C};
 	uint8_t i;
+	uint8_t diagReg;
 	
-	for (i = 0;i < numEncoders;i++)
+	for (i = 0;i < _numEncoders;i++)
 	{
-		_chipAddress = encAddressList[i];		
-		angleReg[i] = AS5048B_angleRegR(); 
-		autoGain[i] = AS5048B_getAutoGain();
-		diag[i] = AS5048B_getDiagReg();
-		magnitude[i] = AS5048B_magnitudeR();
-		angle[i] = AS5048B_angleR(U_DEG, true);		
+		_chipAddress = _encAddressList[i];
+		
+		// read sensor diagnastic reg
+		diagReg = AS5048B_getDiagReg();
+		
+		if ((diagReg >> AS5048B_DIAG_OCF_OFFSET) && !(diagReg >> AS5048B_DIAG_COF_OFFSET) && !(diagReg >> AS5048B_DIAG_COMPHIGH_OFFSET) && !(diagReg >> AS5048B_DIAG_COMPLOW_OFFSET))
+		{
+			angleReg[i] = AS5048B_angleRegR(); 
+			autoGain[i] = AS5048B_getAutoGain();
+			diag[i] = AS5048B_getDiagReg();
+			magnitude[i] = AS5048B_magnitudeR();
+			angle[i] = AS5048B_angleR(U_DEG, true);					
+		}
+		else
+		{
+			angleReg[i] = 0; 
+			autoGain[i] = 0;
+			diag[i] = 0;
+			magnitude[i] = 0;
+			angle[i] = 0;		
+		}	
 	}
 	
 }
@@ -135,11 +150,6 @@ void AS5048B_initialize(void) {
 	
 	// set clockwise readings
 	AS5048B_setClockWise(_clockWise); 
-	
-	// set address
-	chipAddress = 1;
-	//AS5048B_addressRegW(chipAddress); 
-	chipAddress = AS5048B_addressRegR(); 
 	
 	return;
 }
@@ -344,18 +354,18 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	int counter = 0;
 	
 	// wait until I2C is not busy any more
-	//while (I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY)) {
-		//counter++;
-		//if (counter == TIME_OUT_DELAY) {
-			//TIME_OUT_ERR = true;
-			//break;
-		//}
-	//}
+	while (I2C_GetFlagStatus(AS5048B_I2Cx, I2C_FLAG_BUSY)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
 		
 	// send I2C START condition 
 	counter = 0;
-	I2C_GenerateSTART(I2C1, ENABLE);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT)) {
+	I2C_GenerateSTART(AS5048B_I2Cx, ENABLE);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_MODE_SELECT)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -365,8 +375,8 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 
 	//send slave address for write 
 	counter = 0;
-	I2C_Send7bitAddress(I2C1, _chipAddress, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+	I2C_Send7bitAddress(AS5048B_I2Cx, _chipAddress, I2C_Direction_Transmitter);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -376,8 +386,8 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	
 	//send slave register address for write
 	counter = 0;
-	I2C_SendData(I2C1, address);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+	I2C_SendData(AS5048B_I2Cx, address);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -386,23 +396,23 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	}
 	
 	 //stop
-	//I2C_GenerateSTOP(I2C1, ENABLE);
+	//I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
 	
-	// wait until I2C is not busy any more
-	//counter = 0;
-	//while (I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY)) {
-		//counter++;
-		//if (counter == TIME_OUT_DELAY) {
-			//TIME_OUT_ERR = true;
-			//break;
-		//}
-	//}
+	 //wait until I2C is not busy any more
+	counter = 0;
+	while (I2C_GetFlagStatus(AS5048B_I2Cx, I2C_FLAG_BUSY)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
 		
 	// send I2C START condition 
-	I2C_GenerateSTART(I2C1, ENABLE);
+	I2C_GenerateSTART(AS5048B_I2Cx, ENABLE);
 	
 	counter = 0;
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT)) {
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_MODE_SELECT)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -412,8 +422,8 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	
 	// send slave address to read
 	counter = 0;
-	I2C_Send7bitAddress(I2C1, _chipAddress, I2C_Direction_Receiver);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) {
+	I2C_Send7bitAddress(AS5048B_I2Cx, _chipAddress, I2C_Direction_Receiver);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -422,11 +432,11 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	}
 	
 	// enable acknowledge of received data
-	//I2C_AcknowledgeConfig(I2C1, ENABLE);
+	//I2C_AcknowledgeConfig(AS5048B_I2Cx, ENABLE);
 	
 	// wait until one byte has been received
 	counter = 0;
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -435,10 +445,10 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	}
 	
 	// read data from I2C data register and return data byte
-	readValue = I2C_ReceiveData(I2C1);
+	readValue = I2C_ReceiveData(AS5048B_I2Cx);
 	
 	// stop
-	I2C_GenerateSTOP(I2C1, ENABLE);
+	I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
 	
 	
 	return readValue;
@@ -457,7 +467,7 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 	int counter = 0;
 	
 	// wait until I2C is not busy any more
-	//while (I2C_GetFlagStatus(I2C1, I2C_FLAG_BUSY)) {
+	//while (I2C_GetFlagStatus(AS5048B_I2Cx, I2C_FLAG_BUSY)) {
 		//counter++;
 		//if (counter == TIME_OUT_DELAY) {
 			//TIME_OUT_ERR = true;
@@ -467,8 +477,8 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 	
 	// start I2C
 	counter = 0;
-	I2C_GenerateSTART(I2C1, ENABLE);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT)) {
+	I2C_GenerateSTART(AS5048B_I2Cx, ENABLE);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_MODE_SELECT)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -478,8 +488,8 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 
 	//send slave address for write 
 	counter = 0;
-	I2C_Send7bitAddress(I2C1, _chipAddress, I2C_Direction_Transmitter);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+	I2C_Send7bitAddress(AS5048B_I2Cx, _chipAddress, I2C_Direction_Transmitter);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -489,8 +499,8 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 	
 	//send register address for write 
 	counter = 0;
-	I2C_SendData(I2C1, address);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+	I2C_SendData(AS5048B_I2Cx, address);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -500,8 +510,8 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 	
 	//send value for write 
 	counter = 0;
-	I2C_SendData(I2C1, value);
-	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+	I2C_SendData(AS5048B_I2Cx, value);
+	while (!I2C_CheckEvent(AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
 		counter++;
 		if (counter == TIME_OUT_DELAY) {
 			TIME_OUT_ERR = true;
@@ -510,7 +520,7 @@ void AS5048B_writeReg(uint8_t address, uint8_t value) {
 	}
 	
 	// stop 
-	I2C_GenerateSTOP(I2C1, ENABLE);
+	I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
 
 	return;
 }

@@ -41,15 +41,16 @@
 #include "rtwtypes.h"
 #include "debug.h"
 #include "as5048b.h"
+#include "interface_board.h"
 
 /* DAQ and controller loop at 1.0 KHz */
-#define SAMPLE_TIME 0.005
+#define SAMPLE_TIME 0.1
 
 /* Uncomment for debug msg over USART port */
 #define DEBUG_MAIN
 
 /* this variable is used to create a time reference incremented by 1 mili-second */
-#define SYSTEMTICK_PERIOD_MS 0.01
+//#define SYSTEMTICK_PERIOD_MS 0.1
 
 /* this variables are used to allocate a timer for the main application */
 #define MAIN_TIM TIM7
@@ -75,6 +76,9 @@ static uint32_t autoReloadTimerLoopVal_S = 1;
 /* Remaining number of auto reload timer rotation to do */
 static uint32_t remainAutoReloadTimerLoopVal_S = 1;
 
+/* PWM duty cicle to PA3 and PB1 */
+int16_T _pwm_pa3;
+int16_T _pwm_pb1;
 
 /* Private functions */
 void main_delay_us(unsigned long us);
@@ -104,44 +108,93 @@ void SysTick_Handler(void)
 	OverrunFlags[0] = true;
 	
 	/* read encoders */
-	uint16_t angleReg[4];
-	uint8_t autoGain[4];
-	uint8_t diag[4];
-	uint16_t magnitude[4];
-	double angle[4];
+	uint16_t angleReg[4] = {0,0,0,0};
+	uint8_t autoGain[4] = {0, 0, 0, 0};
+	uint8_t diag[4] = {0, 0, 0, 0};
+	uint16_t magnitude[4] = {0, 0, 0, 0};
+	double angle[4] = {0, 0, 0, 0};
 	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	
-	
-
 	/* vn100 read yaw, pitch, and roll */
 	VN100_SPI_Packet *packet;
 	float yaw, pitch, roll;
-	//packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+	//roll = 0;
+	//pitch = 0;
+	//yaw = 0;
 	
-	controller_U.alpha[0] = 0.3 ;
-	controller_U.alpha[1] = 0.3 ;
+	/* inpute to controller here */
+	controller_U.pid_gian[0] = -200; // forelimb Kp
+	controller_U.pid_gian[1] = 0; // leg Kp
+	controller_U.pid_gian[2] = -60; // forelimb Kd
+	controller_U.pid_gian[3] = 0; // leg Kd
+	controller_U.actuator_ctrl_params[0] = 0; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
+	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
+	controller_U.actuator_ctrl_params[2] = 360; // ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
+	controller_U.actuator_ctrl_params[3] = 318; // MAX_RP_ANGLE_RIGHT [deg] 
+	controller_U.actuator_ctrl_params[4] = 1; // MAX_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[5] = 253; // MIN_RP_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[6] = -1; // MIN_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[7] = 244; // MAX_RP_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[8] = 1; // MAX_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[9] = 185; // MIN_RP_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[10] = -1; // MIN_DV_ANGLE_LEFT [deg]
+	controller_U.flight_ctrl_params[0] = 0; // ROLL_SENSITIVITY [-]
+	controller_U.flight_ctrl_params[1] = 0;  // PITCH_SENSITIVITY [-]
+	controller_U.flight_ctrl_params[2] = 0.0;  // MAX_FORELIMB_ANGLE [deg] (n.a.)
+	controller_U.flight_ctrl_params[3] = 0.0;  // MIN_FORELIMB_ANGLE [deg] (n.a.)
+	controller_U.flight_ctrl_params[4] = 0.0;  // MAX_LEG_ANGLE [deg] (n.a.)
+	controller_U.flight_ctrl_params[5] = 0.0;  // MIN_LEG_ANGLE [deg] (n.a.)
+	controller_U.flight_ctrl_params[6] = 30;  // R_foreq  [deg]
+	controller_U.flight_ctrl_params[7] = 30;  // L_foreq [deg]
+	controller_U.flight_ctrl_params[8] = 0;  // R_leq [deg]
+	controller_U.flight_ctrl_params[9] = 0;  // L_leq [deg]
+	
+	// IMU
 	controller_U.roll = roll;
 	controller_U.pitch = pitch;
 	controller_U.yaw = yaw;
 	
+	// Encoders
+	controller_U.angle[0] = angle[0]; // Right forelimb
+	controller_U.angle[1] = angle[2]; // Left forelimb
+	controller_U.angle[2] = angle[1]; // Right tail
+	controller_U.angle[3] = angle[3]; // Left tail
+	
 	/* Step the controller for base rate */
 	controller_step();
 		
-	/* servo actuators*/
-	daq_U.pwm_pd12 = controller_Y.left_t;		// left tail 		
-	daq_U.pwm_pd14 = controller_Y.right_t;		// right tail
-	daq_U.pwm_ph11 = 0;		
-	daq_U.pwm_ph10 = 0;
+	/* drv8835 commands */
+	daq_U.pwm_pa6 = controller_Y.M0B; // Right forelimb 
+	daq_U.pwm_pa7 = controller_Y.M0A;
+	daq_U.pwm_pb0 = controller_Y.M1A; // Left forelimb
+	_pwm_pb1 = controller_Y.M1B;
+	daq_U.pwm_pa0 = controller_Y.M2A; // Right leg
+	daq_U.pwm_pa1 = controller_Y.M2B;
+	daq_U.pwm_pa2 = controller_Y.M3A; // Left leg
+	_pwm_pa3 = controller_Y.M3B;
+	
 	
 	/* Step the model for base rate */
 	daq_step();
+	INTERFACE_BOARD_pwmGenerator();
 	
-	
-
 	char Buff [] = "                                                                                                                                           \r\n\0";
-	const char *tmpBuff = "roll = %f, pitch = %f, yaw = %f,  ult = %f, urt = %f, ulw = %f, , urw = %f";
-	sprintf(Buff, tmpBuff, controller_Y.rpy[0], controller_Y.rpy[1], controller_Y.rpy[2], controller_Y.left_t, controller_Y.right_t, controller_Y.left_w, controller_Y.right_w);
+	//const char *tmpBuff = "roll = %f, pitch = %f, yaw = %f";
+	//sprintf(Buff, tmpBuff, controller_Y.q[0], controller_Y.q[1], controller_Y.q[2]);
+	//debug_printf(Buff, 144);
+	//
+	const char *tmpBuff = "mag1 = %d, mag2 = %d, mag3 = %d,  mag4 = %d";
+	sprintf(Buff, tmpBuff, autoGain[0], autoGain[1], autoGain[2], autoGain[3]);
 	debug_printf(Buff, 144);
+	
+	//const char *tmpBuff = "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f";
+	//sprintf(Buff, tmpBuff, angle[0], angle[1], angle[2], angle[3]);
+	//debug_printf(Buff, 144);
+	////
+	//const char *tmpBuff = "debug1 = %f, debug2 = %f, debug3 = %f,  debug4 = %f";
+	//sprintf(Buff, tmpBuff, controller_Y.debug[0], controller_Y.debug[1], controller_Y.debug[2], controller_Y.debug[3]);
+	//debug_printf(Buff, 144);
 	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;
@@ -171,16 +224,16 @@ int main (void)
 
 	/* Model initialization call */
 	daq_initialize();
+	INTERFACE_BOARD_initialize();
 	
 	/* controller initialization call */
 	controller_initialize();
 	
-	/* Initilaize the vn100 application */
-	//vn100_initialize_defaults();
-	//SPI_initialize();	// vn100 spi initialization ...
+	/* vn100 spi initialization */
+	SPI_initialize();	
 	
 	/* tare imu */
-	//VN100_SPI_Tare(0);
+	VN100_SPI_Tare(0);
 	
 	/* initialize encoders */
 	AS5048B_initialize();

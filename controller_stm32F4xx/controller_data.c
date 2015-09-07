@@ -1,5 +1,5 @@
 /*
- * File: controller_types.h
+ * File: controller_data.c
  *
  * Code generated for Simulink model :controller.
  *
@@ -30,15 +30,18 @@
  * ******************************************************************************
  */
 
-#ifndef RTW_HEADER_controller_types_h_
-#define RTW_HEADER_controller_types_h_
+#include "controller.h"
+#include "controller_private.h"
 
-/* Forward declaration for rtModel */
-typedef struct tag_RTM_controller RT_MODEL_controller;
-
-#endif                                 /* RTW_HEADER_controller_types_h_ */
+/* Constant parameters (auto storage) */
+const ConstP_controller controller_ConstP = {
+  /* Expression: [0,20,360,1,1,-1,-1,1,1,-1,-1].'
+   * Referenced by: '<Root>/IC2'
+   */
+  { 0.0, 20.0, 360.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0 }
+};
 
 /* File trailer for Real-Time Workshop generated code.
  *
- * [EOF] controller_types.h
+ * [EOF] controller_data.c
  */
