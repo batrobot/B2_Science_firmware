@@ -52,7 +52,7 @@ void SPI_initialize(void) {
 			/* GPIO default Value */
 	//GPIO_DeInit(VN100_SPI_CS_GPIO_PORT);
 	GPIO_DeInit(VN100_SPI_SCK_GPIO_PORT);
-	GPIO_DeInit(VN100_SPI_MISO_GPIO_PORT);
+	//GPIO_DeInit(VN100_SPI_MISO_GPIO_PORT);
 	GPIO_DeInit(VN100_SPI_MOSI_GPIO_PORT);
 
 //
