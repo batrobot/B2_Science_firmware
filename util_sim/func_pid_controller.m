@@ -14,11 +14,11 @@
 %   prev_err(2): left forelimb
 %   prev_err(3): right leg
 %   prev_err(4): left leg
-% gain: control gain vector 2-by-2 vec
-%   gain(1,1:2): right forelimb Kp and Kd
-%   gain(1,1:2): left forelimb  Kp and Kd
-%   gain(2,1:2): right leg Kp and Kd
-%   gain(2,1:2): left leg Kp and Kd
+% gain: control gain vector 4-by-1 vec
+%   gain(1): right-left forelimb Kp
+%   gain(2): right-left leg Kp
+%   gain(3): right-left forelimb Kd
+%   gain(4): right-left leg Kd
 % u: control action, 4-by-1 vec
 %   u(1): right forelimb
 %   u(2): left forelimb
@@ -43,15 +43,15 @@ global MAX_DV_ANGLE_LEFT;
 global MIN_RP_ANGLE_LEFT;
 global MIN_DV_ANGLE_LEFT;
 
-Kp = [gain(1,1),0,0,0;...
-      0, gain(1,1),0,0;...
-      0, 0,gain(2,1),0;...
-      0, 0, 0,gain(2,1)];
+Kp = [gain(1),0,0,0;...
+      0, gain(1),0,0;...
+      0, 0,gain(2),0;...
+      0, 0, 0,gain(2)];
 
-Kd = [gain(1,2),0,0,0;...
-      0, gain(1,2),0,0;...
-      0, 0,gain(2,2),0;...
-      0, 0, 0,gain(2,2)];
+Kd = [gain(3),0,0,0;...
+      0, gain(3),0,0;...
+      0, 0,gain(4),0;...
+      0, 0, 0,gain(4)];
 
 % compute error and derr
 err = angle - des_angle;
