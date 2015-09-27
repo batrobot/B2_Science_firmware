@@ -125,30 +125,30 @@ void SysTick_Handler(void)
 	
 	/* inpute to controller here */
 	controller_U.pid_gian[0] = -100; // forelimb Kp -200
-	controller_U.pid_gian[1] = 300; // leg Kp
+	controller_U.pid_gian[1] = 200; // leg Kp
 	controller_U.pid_gian[2] = -10; // forelimb Kd -60
-	controller_U.pid_gian[3] = 50; // leg Kd
-	controller_U.actuator_ctrl_params[0] = 60; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
+	controller_U.pid_gian[3] = 20; // leg Kd
+	controller_U.actuator_ctrl_params[0] = 80; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
 	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
 	controller_U.actuator_ctrl_params[2] = 360; // ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
 	controller_U.actuator_ctrl_params[3] = 318; // MAX_RP_ANGLE_RIGHT [deg] 
-	controller_U.actuator_ctrl_params[4] = 170; // MAX_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[4] = 180; // MAX_DV_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[5] = 253; // MIN_RP_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[6] = 110; // MIN_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[6] = 130; // MIN_DV_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[7] = 244; // MAX_RP_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[8] = 130; // MAX_DV_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[9] = 185; // MIN_RP_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[10] = 70; // MIN_DV_ANGLE_LEFT [deg]
-	controller_U.flight_ctrl_params[0] = 0.01; // ROLL_SENSITIVITY [-]
-	controller_U.flight_ctrl_params[1] = 0.01;  // PITCH_SENSITIVITY [-]
+	controller_U.flight_ctrl_params[0] = -0.01; // ROLL_SENSITIVITY [-]
+	controller_U.flight_ctrl_params[1] = 0.001;  // PITCH_SENSITIVITY [-]
 	controller_U.flight_ctrl_params[2] = 0.0;  // MAX_FORELIMB_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[3] = 0.0;  // MIN_FORELIMB_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[4] = 0.0;  // MAX_LEG_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[5] = 0.0;  // MIN_LEG_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[6] = 30;  // R_foreq  [deg]
 	controller_U.flight_ctrl_params[7] = 30;  // L_foreq [deg]
-	controller_U.flight_ctrl_params[8] = 30;  // R_leq [deg]
-	controller_U.flight_ctrl_params[9] = 30;  // L_leq [deg]
+	controller_U.flight_ctrl_params[8] = 32;  // R_leq [deg]
+	controller_U.flight_ctrl_params[9] = 28;  // L_leq [deg]
 	
 	// IMU
 	controller_U.roll = roll;
@@ -158,7 +158,7 @@ void SysTick_Handler(void)
 	// Encoders
 	controller_U.angle[0] = angle[0]; // Right forelimb
 	controller_U.angle[1] = angle[2]; // Left forelimb
-	controller_U.angle[2] = angle[1]; // Right tail
+	controller_U.angle[2] = angle[2]; // Right tail
 	controller_U.angle[3] = angle[0]; // Left tail (using right forelimb encoder!)
 	
 	/* Step the controller for base rate */
@@ -188,13 +188,13 @@ void SysTick_Handler(void)
 	//sprintf(Buff, tmpBuff, autoGain[0], autoGain[1], autoGain[2], autoGain[3]);
 	//debug_printf(Buff, 144);
 	
-	//const char *tmpbuff = "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f";
-	//sprintf(Buff, tmpbuff, angle[0], angle[1], angle[2], angle[3]);
-	//debug_printf(Buff, 144);
-	//////
-	const char *tmpBuff = "debug1 = %f, debug2 = %f, debug3 = %f,  debug4 = %f";
-	sprintf(Buff, tmpBuff, controller_Y.debug[0], controller_Y.debug[1], controller_Y.debug[2], controller_Y.debug[3]);
+	const char *tmpbuff = "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f";
+	sprintf(Buff, tmpbuff, angle[0], angle[1], angle[2], angle[3]);
 	debug_printf(Buff, 144);
+	//////
+	//const char *tmpBuff = "debug1 = %f, debug2 = %f, debug3 = %f,  debug4 = %f";
+	//sprintf(Buff, tmpBuff, controller_Y.debug[0], controller_Y.debug[1], controller_Y.debug[2], controller_Y.debug[3]);
+	//debug_printf(Buff, 144);
 	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;

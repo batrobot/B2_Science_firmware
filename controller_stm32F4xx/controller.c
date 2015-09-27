@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.138
+ * Model version      : 1.140
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Sep 13 15:23:04 2015
+ * C/C++ source code generated on  : Mon Sep 14 16:02:44 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -52,6 +52,7 @@ void controller_step(void)
   /* local block i/o variables */
   real_T rtb_DigitalClock;
   real_T sensitivity_matrix[16];
+  real_T sensitivity_matrix_2[16];
   int32_T argout;
   int32_T b_argout;
   int32_T c_argout;
@@ -64,22 +65,24 @@ void controller_step(void)
 
   real_T rtb_us[8];
   real_T rtb_q[12];
-  real_T rtb_uf[4];
-  real_T tmp[4];
+  real_T sensitivity_matrix_0[4];
+  real_T sensitivity_matrix_2_0[4];
+  real_T tmp[16];
   real_T tmp_0[16];
-  real_T tmp_1[16];
-  real_T tmp_2[4];
   int8_T argout_0[32];
-  real_T rtb_uf_a;
+  real_T rtb_uf;
   real_T angle_difference_idx_0;
   real_T angle_difference_idx_1;
   real_T angle_difference_idx_2;
   real_T angle_difference_idx_3;
-  real_T min_angle_idx_2;
   real_T u_pid_idx_0;
   real_T u_pid_idx_1;
   real_T u_pid_idx_2;
   real_T u_pid_idx_3;
+  real_T rtb_uf_idx_0;
+  real_T rtb_uf_idx_1;
+  real_T rtb_uf_idx_2;
+  real_T rtb_uf_idx_3;
   real_T angle_aro_idx_0;
   real_T angle_aro_idx_1;
   real_T angle_aro_idx_2;
@@ -222,28 +225,55 @@ void controller_step(void)
   /* '<S3>:1:56' max_angle = DEG2RAD*[MAX_FORELIMB_ANGLE,MAX_FORELIMB_ANGLE,MAX_LEG_ANGLE,MAX_LEG_ANGLE].'; */
   /* '<S3>:1:57' min_angle = DEG2RAD*[MIN_FORELIMB_ANGLE,MIN_FORELIMB_ANGLE,MIN_LEG_ANGLE,MIN_LEG_ANGLE].'; */
   /*  comptue control */
-  /* '<S3>:1:60' sensitivity_matrix = diag([ROLL_SENSITIVITY,ROLL_SENSITIVITY,PITCH_SENSITIVITY,PITCH_SENSITIVITY]); */
-  memset(&sensitivity_matrix[0], 0, sizeof(real_T) << 4U);
+  /* '<S3>:1:60' sensitivity_matrix = diag([ROLL_SENSITIVITY,ROLL_SENSITIVITY,PITCH_SENSITIVITY,-PITCH_SENSITIVITY]); */
+  for (argout = 0; argout < 16; argout++) {
+    sensitivity_matrix[argout] = 0.0;
+    sensitivity_matrix_2[argout] = 0.0;
+  }
+
   sensitivity_matrix[0] = controller_DW.IC[0];
   sensitivity_matrix[5] = controller_DW.IC[0];
   sensitivity_matrix[10] = controller_DW.IC[1];
-  sensitivity_matrix[15] = controller_DW.IC[1];
+  sensitivity_matrix[15] = -controller_DW.IC[1];
+
+  /*  just added this for tail control experiments, this way tail is going to */
+  /*  respond to roll motions */
+  /* '<S3>:1:64' sensitivity_matrix_2 = diag([ROLL_SENSITIVITY,ROLL_SENSITIVITY,ROLL_SENSITIVITY,ROLL_SENSITIVITY]); */
+  sensitivity_matrix_2[0] = controller_DW.IC[0];
+  sensitivity_matrix_2[5] = controller_DW.IC[0];
+  sensitivity_matrix_2[10] = controller_DW.IC[0];
+  sensitivity_matrix_2[15] = controller_DW.IC[0];
 
   /*  roll */
   /*  pitch */
-  /* '<S3>:1:66' angle = [q(1),q(1),q(2),-q(2)].'; */
-  /* '<S3>:1:67' uf = sensitivity_matrix*angle + eq; */
-  tmp[0] = controller_DW.IC[6];
-  tmp[1] = controller_DW.IC[7];
-  tmp[2] = controller_DW.IC[8];
-  tmp[3] = controller_DW.IC[9];
+  /*  angle = [q(1),q(1),q(2),q(2)].'; */
+  /* '<S3>:1:72' angle = [q(1),q(1),q(2),q(2)].'; */
+  /* '<S3>:1:73' angle_2 = [q(1),q(1),q(1),q(1)].'; */
+  /* '<S3>:1:74' uf = sensitivity_matrix*angle + sensitivity_matrix_2*angle_2 + eq; */
   for (argout = 0; argout < 4; argout++) {
-    rtb_uf[argout] = (((sensitivity_matrix[argout + 4] * controller_U.pitch +
-                        sensitivity_matrix[argout] * controller_U.pitch) +
-                       sensitivity_matrix[argout + 8] * controller_U.roll) +
-                      sensitivity_matrix[argout + 12] * -controller_U.roll) +
-      0.017453292519943295 * tmp[argout];
+    angle_difference_idx_3 = sensitivity_matrix[argout + 12] * controller_U.roll
+      + (sensitivity_matrix[argout + 8] * controller_U.roll +
+         (sensitivity_matrix[argout + 4] * controller_U.pitch +
+          sensitivity_matrix[argout] * controller_U.pitch));
+    sensitivity_matrix_0[argout] = angle_difference_idx_3;
   }
+
+  for (argout = 0; argout < 4; argout++) {
+    angle_difference_idx_3 = sensitivity_matrix_2[argout + 12] *
+      controller_U.pitch + (sensitivity_matrix_2[argout + 8] *
+      controller_U.pitch + (sensitivity_matrix_2[argout + 4] *
+      controller_U.pitch + sensitivity_matrix_2[argout] * controller_U.pitch));
+    sensitivity_matrix_2_0[argout] = angle_difference_idx_3;
+  }
+
+  rtb_uf_idx_0 = (sensitivity_matrix_0[0] + sensitivity_matrix_2_0[0]) +
+    0.017453292519943295 * controller_DW.IC[6];
+  rtb_uf_idx_1 = (sensitivity_matrix_0[1] + sensitivity_matrix_2_0[1]) +
+    0.017453292519943295 * controller_DW.IC[7];
+  rtb_uf_idx_2 = (sensitivity_matrix_0[2] + sensitivity_matrix_2_0[2]) +
+    0.017453292519943295 * controller_DW.IC[8];
+  rtb_uf_idx_3 = (sensitivity_matrix_0[3] + sensitivity_matrix_2_0[3]) +
+    0.017453292519943295 * controller_DW.IC[9];
 
   /* End of MATLAB Function: '<Root>/func_flight_controller' */
 
@@ -257,10 +287,10 @@ void controller_step(void)
   /*          uf(i) = min_angle(i); */
   /*      end */
   /*  end */
-  controller_Y.flight_ctrl[0] = rtb_uf[0];
-  controller_Y.flight_ctrl[1] = rtb_uf[1];
-  controller_Y.flight_ctrl[2] = rtb_uf[2];
-  controller_Y.flight_ctrl[3] = rtb_uf[3];
+  controller_Y.flight_ctrl[0] = rtb_uf_idx_0;
+  controller_Y.flight_ctrl[1] = rtb_uf_idx_1;
+  controller_Y.flight_ctrl[2] = rtb_uf_idx_2;
+  controller_Y.flight_ctrl[3] = rtb_uf_idx_3;
 
   /* InitialCondition: '<Root>/IC2' incorporates:
    *  Inport: '<Root>/actuator_ctrl_params'
@@ -505,25 +535,24 @@ void controller_step(void)
   /*  calibrate angles */
   /* 'func_anti_rollOver:85' angle_aro = angle_aro-min_angle; */
   for (argout = 0; argout < 4; argout++) {
-    tmp[argout] = ((((real_T)b[argout + 4] *
-                     controller_DW.ANTI_ROLLOVER_CORRECTION *
-                     controller_DW.ROLLOVER_FLAG[1] +
-                     controller_DW.ANTI_ROLLOVER_CORRECTION * (real_T)b[argout] *
-                     controller_DW.ROLLOVER_FLAG[0]) + (real_T)b[argout + 8] *
-                    controller_DW.ANTI_ROLLOVER_CORRECTION *
-                    controller_DW.ROLLOVER_FLAG[2]) + (real_T)b[argout + 12] *
-                   controller_DW.ANTI_ROLLOVER_CORRECTION *
-                   controller_DW.ROLLOVER_FLAG[3]) + controller_U.angle[argout];
+    sensitivity_matrix_0[argout] = ((((real_T)b[argout + 4] *
+      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[1] +
+      controller_DW.ANTI_ROLLOVER_CORRECTION * (real_T)b[argout] *
+      controller_DW.ROLLOVER_FLAG[0]) + (real_T)b[argout + 8] *
+      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[2]) +
+                                    (real_T)b[argout + 12] *
+      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[3]) +
+      controller_U.angle[argout];
   }
 
-  angle_aro_idx_0 = 0.017453292519943295 * tmp[0] - 0.017453292519943295 *
-    controller_DW.MIN_RP_ANGLE_RIGHT;
-  angle_aro_idx_1 = 0.017453292519943295 * tmp[1] - 0.017453292519943295 *
-    controller_DW.MIN_RP_ANGLE_LEFT;
-  angle_aro_idx_2 = 0.017453292519943295 * tmp[2] - 0.017453292519943295 *
-    controller_DW.MIN_DV_ANGLE_RIGHT;
-  angle_aro_idx_3 = 0.017453292519943295 * tmp[3] - 0.017453292519943295 *
-    controller_DW.MIN_DV_ANGLE_LEFT;
+  angle_aro_idx_0 = 0.017453292519943295 * sensitivity_matrix_0[0] -
+    0.017453292519943295 * controller_DW.MIN_RP_ANGLE_RIGHT;
+  angle_aro_idx_1 = 0.017453292519943295 * sensitivity_matrix_0[1] -
+    0.017453292519943295 * controller_DW.MIN_RP_ANGLE_LEFT;
+  angle_aro_idx_2 = 0.017453292519943295 * sensitivity_matrix_0[2] -
+    0.017453292519943295 * controller_DW.MIN_DV_ANGLE_RIGHT;
+  angle_aro_idx_3 = 0.017453292519943295 * sensitivity_matrix_0[3] -
+    0.017453292519943295 * controller_DW.MIN_DV_ANGLE_LEFT;
 
   /*  filtering */
   /* '<S2>:1:99' angle_f = func_lowpass_filter(angle_aro,angle_aro_prev); */
@@ -607,75 +636,76 @@ void controller_step(void)
   /* 'func_pid_controller:54'       0, 0, 0,gain(4)]; */
   /*  compute error and derr */
   /* 'func_pid_controller:57' err = angle - des_angle; */
-  rtb_uf[0] = angle_f_idx_0 - rtb_uf[0];
-  rtb_uf[1] = angle_f_idx_1 - rtb_uf[1];
-  rtb_uf[2] = angle_f_idx_2 - rtb_uf[2];
-  rtb_uf_a = angle_f_idx_3 - rtb_uf[3];
+  rtb_uf_idx_0 = angle_f_idx_0 - rtb_uf_idx_0;
+  rtb_uf_idx_1 = angle_f_idx_1 - rtb_uf_idx_1;
+  rtb_uf_idx_2 = angle_f_idx_2 - rtb_uf_idx_2;
+  rtb_uf = angle_f_idx_3 - rtb_uf_idx_3;
 
   /* 'func_pid_controller:58' derr = err-prev_err; */
   /*  computer u */
   /* 'func_pid_controller:61' u = -Kp*err -Kd*derr; */
-  tmp_0[0] = controller_U.pid_gian[0];
+  tmp[0] = controller_U.pid_gian[0];
+  tmp[4] = 0.0;
+  tmp[8] = 0.0;
+  tmp[12] = 0.0;
+  tmp[1] = 0.0;
+  tmp[5] = controller_U.pid_gian[0];
+  tmp[9] = 0.0;
+  tmp[13] = 0.0;
+  tmp[2] = 0.0;
+  tmp[6] = 0.0;
+  tmp[10] = controller_U.pid_gian[1];
+  tmp[14] = 0.0;
+  tmp[3] = 0.0;
+  tmp[7] = 0.0;
+  tmp[11] = 0.0;
+  tmp[15] = controller_U.pid_gian[1];
+  for (argout = 0; argout < 4; argout++) {
+    sensitivity_matrix[argout << 2] = -tmp[argout << 2];
+    sensitivity_matrix[1 + (argout << 2)] = -tmp[(argout << 2) + 1];
+    sensitivity_matrix[2 + (argout << 2)] = -tmp[(argout << 2) + 2];
+    sensitivity_matrix[3 + (argout << 2)] = -tmp[(argout << 2) + 3];
+  }
+
+  tmp_0[0] = controller_U.pid_gian[2];
   tmp_0[4] = 0.0;
   tmp_0[8] = 0.0;
   tmp_0[12] = 0.0;
   tmp_0[1] = 0.0;
-  tmp_0[5] = controller_U.pid_gian[0];
+  tmp_0[5] = controller_U.pid_gian[2];
   tmp_0[9] = 0.0;
   tmp_0[13] = 0.0;
   tmp_0[2] = 0.0;
   tmp_0[6] = 0.0;
-  tmp_0[10] = controller_U.pid_gian[1];
+  tmp_0[10] = controller_U.pid_gian[3];
   tmp_0[14] = 0.0;
   tmp_0[3] = 0.0;
   tmp_0[7] = 0.0;
   tmp_0[11] = 0.0;
-  tmp_0[15] = controller_U.pid_gian[1];
+  tmp_0[15] = controller_U.pid_gian[3];
+  angle_difference_idx_3 = rtb_uf_idx_0 - controller_DW.UnitDelay2_DSTATE[0];
+  angle_difference_idx_0 = rtb_uf_idx_1 - controller_DW.UnitDelay2_DSTATE[1];
+  angle_difference_idx_2 = rtb_uf_idx_2 - controller_DW.UnitDelay2_DSTATE[2];
+  rtb_uf_idx_3 = rtb_uf - controller_DW.UnitDelay2_DSTATE[3];
   for (argout = 0; argout < 4; argout++) {
-    sensitivity_matrix[argout << 2] = -tmp_0[argout << 2];
-    sensitivity_matrix[1 + (argout << 2)] = -tmp_0[(argout << 2) + 1];
-    sensitivity_matrix[2 + (argout << 2)] = -tmp_0[(argout << 2) + 2];
-    sensitivity_matrix[3 + (argout << 2)] = -tmp_0[(argout << 2) + 3];
-  }
-
-  tmp_1[0] = controller_U.pid_gian[2];
-  tmp_1[4] = 0.0;
-  tmp_1[8] = 0.0;
-  tmp_1[12] = 0.0;
-  tmp_1[1] = 0.0;
-  tmp_1[5] = controller_U.pid_gian[2];
-  tmp_1[9] = 0.0;
-  tmp_1[13] = 0.0;
-  tmp_1[2] = 0.0;
-  tmp_1[6] = 0.0;
-  tmp_1[10] = controller_U.pid_gian[3];
-  tmp_1[14] = 0.0;
-  tmp_1[3] = 0.0;
-  tmp_1[7] = 0.0;
-  tmp_1[11] = 0.0;
-  tmp_1[15] = controller_U.pid_gian[3];
-  angle_difference_idx_3 = rtb_uf[0] - controller_DW.UnitDelay2_DSTATE[0];
-  angle_difference_idx_0 = rtb_uf[1] - controller_DW.UnitDelay2_DSTATE[1];
-  angle_difference_idx_1 = rtb_uf[2] - controller_DW.UnitDelay2_DSTATE[2];
-  min_angle_idx_2 = rtb_uf_a - controller_DW.UnitDelay2_DSTATE[3];
-  for (argout = 0; argout < 4; argout++) {
-    angle_difference_idx_2 = sensitivity_matrix[argout + 12] * rtb_uf_a +
-      (sensitivity_matrix[argout + 8] * rtb_uf[2] + (sensitivity_matrix[argout +
-        4] * rtb_uf[1] + sensitivity_matrix[argout] * rtb_uf[0]));
-    tmp[argout] = angle_difference_idx_2;
+    angle_difference_idx_1 = sensitivity_matrix[argout + 12] * rtb_uf +
+      (sensitivity_matrix[argout + 8] * rtb_uf_idx_2 +
+       (sensitivity_matrix[argout + 4] * rtb_uf_idx_1 +
+        sensitivity_matrix[argout] * rtb_uf_idx_0));
+    sensitivity_matrix_0[argout] = angle_difference_idx_1;
   }
 
   for (argout = 0; argout < 4; argout++) {
-    angle_difference_idx_2 = tmp_1[argout + 12] * min_angle_idx_2 +
-      (tmp_1[argout + 8] * angle_difference_idx_1 + (tmp_1[argout + 4] *
-        angle_difference_idx_0 + tmp_1[argout] * angle_difference_idx_3));
-    tmp_2[argout] = angle_difference_idx_2;
+    angle_difference_idx_1 = tmp_0[argout + 12] * rtb_uf_idx_3 + (tmp_0[argout +
+      8] * angle_difference_idx_2 + (tmp_0[argout + 4] * angle_difference_idx_0
+      + tmp_0[argout] * angle_difference_idx_3));
+    sensitivity_matrix_2_0[argout] = angle_difference_idx_1;
   }
 
-  u_pid_idx_0 = tmp[0] - tmp_2[0];
-  u_pid_idx_1 = tmp[1] - tmp_2[1];
-  u_pid_idx_2 = tmp[2] - tmp_2[2];
-  u_pid_idx_3 = tmp[3] - tmp_2[3];
+  u_pid_idx_0 = sensitivity_matrix_0[0] - sensitivity_matrix_2_0[0];
+  u_pid_idx_1 = sensitivity_matrix_0[1] - sensitivity_matrix_2_0[1];
+  u_pid_idx_2 = sensitivity_matrix_0[2] - sensitivity_matrix_2_0[2];
+  u_pid_idx_3 = sensitivity_matrix_0[3] - sensitivity_matrix_2_0[3];
 
   /*  turn-off the controller immediately when hit the limits */
   /* 'func_pid_controller:64' DEG2RAD = pi/180; */
@@ -906,9 +936,9 @@ void controller_step(void)
   }
 
   /* 'func_map_pid_to_servo:42' u_drv = H*abs(u); */
-  angle_f_idx_0 = fabs(angle_difference_idx_0);
+  rtb_uf_idx_3 = fabs(angle_difference_idx_0);
   angle_difference_idx_1 = fabs(angle_difference_idx_1);
-  min_angle_idx_2 = fabs(angle_difference_idx_2);
+  angle_difference_idx_2 = fabs(angle_difference_idx_2);
   angle_difference_idx_3 = fabs(angle_difference_idx_3);
 
   /*  end of code */
@@ -946,9 +976,9 @@ void controller_step(void)
   argout_0[31] = (int8_T)h_argout;
   for (argout = 0; argout < 8; argout++) {
     angle_difference_idx_0 = (real_T)argout_0[argout + 24] *
-      angle_difference_idx_3 + ((real_T)argout_0[argout + 16] * min_angle_idx_2
-      + ((real_T)argout_0[argout + 8] * angle_difference_idx_1 + (real_T)
-         argout_0[argout] * angle_f_idx_0));
+      angle_difference_idx_3 + ((real_T)argout_0[argout + 16] *
+      angle_difference_idx_2 + ((real_T)argout_0[argout + 8] *
+      angle_difference_idx_1 + (real_T)argout_0[argout] * rtb_uf_idx_3));
     rtb_us[argout] = angle_difference_idx_0;
   }
 
@@ -967,10 +997,10 @@ void controller_step(void)
    *  MATLAB Function: '<Root>/func_actuator_controller'
    */
   /* '<S2>:1:110' err2mem = err; */
-  controller_DW.UnitDelay2_DSTATE[0] = rtb_uf[0];
-  controller_DW.UnitDelay2_DSTATE[1] = rtb_uf[1];
-  controller_DW.UnitDelay2_DSTATE[2] = rtb_uf[2];
-  controller_DW.UnitDelay2_DSTATE[3] = rtb_uf_a;
+  controller_DW.UnitDelay2_DSTATE[0] = rtb_uf_idx_0;
+  controller_DW.UnitDelay2_DSTATE[1] = rtb_uf_idx_1;
+  controller_DW.UnitDelay2_DSTATE[2] = rtb_uf_idx_2;
+  controller_DW.UnitDelay2_DSTATE[3] = rtb_uf;
 
   /* Outport: '<Root>/debug' incorporates:
    *  MATLAB Function: '<Root>/func_actuator_controller'
