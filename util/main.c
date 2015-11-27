@@ -76,9 +76,11 @@ static uint32_t autoReloadTimerLoopVal_S = 1;
 /* Remaining number of auto reload timer rotation to do */
 static uint32_t remainAutoReloadTimerLoopVal_S = 1;
 
-/* PWM duty cicle to PA3 and PB1 */
+/* PWM duty cicle to PA3, PB1, PE5, PE6 */
 int16_T _pwm_pa3;
 int16_T _pwm_pb1;
+int16_T _pwm_pe5;
+int16_T _pwm_pe6;
 
 /* Private functions */
 void main_delay_us(unsigned long us);
@@ -124,28 +126,38 @@ void SysTick_Handler(void)
 	//yaw = 0;
 	
 	/* inpute to controller here */
-	controller_U.pid_gian[0] = -100; // forelimb Kp -200
+	controller_U.pid_gian[0]; // forelimb Kp -200
 	controller_U.pid_gian[1] = 200; // leg Kp
-	controller_U.pid_gian[2] = -10; // forelimb Kd -60
+	controller_U.pid_gian[2]; // forelimb Kd -60
 	controller_U.pid_gian[3] = 20; // leg Kd
-	controller_U.actuator_ctrl_params[0] = 80; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
+	controller_U.pid_gian[4]; // forelimb Ki ???
+	controller_U.pid_gian[5] = 0; // leg Ki ???
+	controller_U.actuator_ctrl_params[0]; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
 	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
 	controller_U.actuator_ctrl_params[2] = 360; // ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
-	controller_U.actuator_ctrl_params[3] = 318; // MAX_RP_ANGLE_RIGHT [deg] 
+	controller_U.actuator_ctrl_params[3] = 308; // MAX_RP_ANGLE_RIGHT [deg] 
 	controller_U.actuator_ctrl_params[4] = 180; // MAX_DV_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[5] = 253; // MIN_RP_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[5] = 240; // MIN_RP_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[6] = 130; // MIN_DV_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[7] = 244; // MAX_RP_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[7] = 243; // MAX_RP_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[8] = 130; // MAX_DV_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[9] = 185; // MIN_RP_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[10] = 70; // MIN_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[11] = SAMPLE_TIME; // Sample interval
 	controller_U.flight_ctrl_params[0] = -0.01; // ROLL_SENSITIVITY [-]
 	controller_U.flight_ctrl_params[1] = 0.001;  // PITCH_SENSITIVITY [-]
 	controller_U.flight_ctrl_params[2] = 0.0;  // MAX_FORELIMB_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[3] = 0.0;  // MIN_FORELIMB_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[4] = 0.0;  // MAX_LEG_ANGLE [deg] (n.a.)
 	controller_U.flight_ctrl_params[5] = 0.0;  // MIN_LEG_ANGLE [deg] (n.a.)
-	controller_U.flight_ctrl_params[6] = 30;  // R_foreq  [deg]
+	
+	// oscillating equilibrium point
+	static float oscillating_freq;
+	static float oscillating_amp;
+	static float oscillating_offset;
+	float oscillating_eq = 0;
+	oscillating_eq = oscillating_amp*sin(2*PI*oscillating_freq*controller_Y.time) + oscillating_offset;
+	controller_U.flight_ctrl_params[6] = RAD2DEG(oscillating_eq);  // R_foreq  [deg]
 	controller_U.flight_ctrl_params[7] = 30;  // L_foreq [deg]
 	controller_U.flight_ctrl_params[8] = 32;  // R_leq [deg]
 	controller_U.flight_ctrl_params[9] = 28;  // L_leq [deg]
@@ -154,6 +166,9 @@ void SysTick_Handler(void)
 	controller_U.roll = roll;
 	controller_U.pitch = pitch;
 	controller_U.yaw = yaw;
+	//controller_U.roll = 0;
+	//controller_U.pitch = 0;
+	//controller_U.yaw = 0;
 	
 	// Encoders
 	controller_U.angle[0] = angle[0]; // Right forelimb
@@ -165,14 +180,18 @@ void SysTick_Handler(void)
 	controller_step();
 		
 	/* drv8835 commands */
-	daq_U.pwm_pa6 = controller_Y.M0B; // Right forelimb 
+	daq_U.pwm_pa6; // Right forelimb 
 	daq_U.pwm_pa7 = controller_Y.M0A;
-	daq_U.pwm_pb0 = controller_Y.M1A; // Left forelimb
+	daq_U.pwm_pb0; // Left forelimb
 	_pwm_pb1 = controller_Y.M1B;
-	daq_U.pwm_pa0 = controller_Y.M2A; // Right leg
+	daq_U.pwm_pa0; // Right leg
 	daq_U.pwm_pa1 = controller_Y.M2B;
-	daq_U.pwm_pa2 = controller_Y.M3B; // Left leg
+	daq_U.pwm_pa2; // Left leg
 	_pwm_pa3 = controller_Y.M3A;
+	
+	/* TMS320 commands*/
+	_pwm_pe5 = controller_Y.ubldc[0];	// right armwing
+	_pwm_pe6 = controller_Y.ubldc[1];	// left armwing
 	
 	
 	/* Step the model for base rate */
@@ -184,17 +203,27 @@ void SysTick_Handler(void)
 	//sprintf(Buff, tmpBuff, controller_Y.q[0], controller_Y.q[1], controller_Y.q[2]);
 	//debug_printf(Buff, 144);
 	//
-	//const char *tmpBuff = "mag1 = %d, mag2 = %d, mag3 = %d,  mag4 = %d";
-	//sprintf(Buff, tmpBuff, autoGain[0], autoGain[1], autoGain[2], autoGain[3]);
+	const char *tmpBuff = "mag1 = %d, mag2 = %d, mag3 = %d,  mag4 = %d";
+	sprintf(Buff, tmpBuff, autoGain[0], autoGain[1], autoGain[2], autoGain[3]);
+	debug_printf(Buff, 144);
+	
+	//const char *tmpbuff = "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f";
+	//sprintf(Buff, tmpbuff, angle[0], angle[1], angle[2], angle[3]);
 	//debug_printf(Buff, 144);
 	
-	const char *tmpbuff = "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f";
-	sprintf(Buff, tmpbuff, angle[0], angle[1], angle[2], angle[3]);
-	debug_printf(Buff, 144);
-	//////
+	//const char *tmpbuff = "bldc[0] = %f, bldc[1] = %f, bldc[2] = %f,  bldc[3] = %f";
+	//sprintf(Buff, tmpbuff, controller_Y.ubldc[0], controller_Y.ubldc[1], controller_Y.ubldc[2], controller_Y.ubldc[3]);
+	//debug_printf(Buff, 144);
+	
+	
 	//const char *tmpBuff = "debug1 = %f, debug2 = %f, debug3 = %f,  debug4 = %f";
 	//sprintf(Buff, tmpBuff, controller_Y.debug[0], controller_Y.debug[1], controller_Y.debug[2], controller_Y.debug[3]);
 	//debug_printf(Buff, 144);
+	
+	//const char *tmpBuff = "time = %f, eq = %f, angle = %f,  controller = %f";
+	//sprintf(Buff, tmpBuff, controller_Y.time, oscillating_eq, controller_Y.debug[0], controller_Y.ubldc[0]);
+	//debug_printf(Buff, 144);
+	
 	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;

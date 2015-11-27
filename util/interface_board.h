@@ -39,19 +39,25 @@
 /* timer configuration params */
 #define TIMER2_COUNTER_CLOCK_FREQ  1312500
 #define TIMER3_COUNTER_CLOCK_FREQ  1312500
+#define TIMER9_COUNTER_CLOCK_FREQ  1312500
 
 /* PWM output frequency */
 #define TIMER2_PWM_FREQ  1000
 #define TIMER3_PWM_FREQ  1000
+#define TIMER9_PWM_FREQ  500
 
-/* PWM duty cicle to PA3 and PB1 */
+
+/* PWM duty cicle to PA3, PB1, PE5, PE6 */
 extern int16_T _pwm_pa3;
 extern int16_T _pwm_pb1;
+extern int16_T _pwm_pe5;
+extern int16_T _pwm_pe6;
 
 /* Public functions */
 void INTERFACE_BOARD_initialize(void);
 void INTERFACE_BOARD_TIM2_Configuration(void);
 void INTERFACE_BOARD_TIM3_Configuration(void);
+void INTERFACE_BOARD_TIM9_Configuration(void);
 void INTERFACE_BOARD_pwmGenerator(void);
 
 #endif

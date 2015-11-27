@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.65
+ * Model version      : 1.68
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Thu Sep 03 12:59:16 2015
+ * C/C++ source code generated on  : Mon Nov 09 11:38:52 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -993,14 +993,20 @@ void GPIOE_Configuration(void)
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOE, GPIO_PinSource5, GPIO_AF_TIM9);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOE_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOE, &GPIOE_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOE, GPIO_PinSource6, GPIO_AF_TIM9);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM9, ENABLE);
   GPIOE_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOE_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOE_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -1698,7 +1704,7 @@ void daq_step(void)
 
     //u16 NbData_Read = 0;               //Nb of data copied into the output data buffer
     //int i;                             //Loop counter
-
+//
 #ifndef USART6_IT_SEND
 
     u16 i = 0;

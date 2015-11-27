@@ -39,30 +39,30 @@
 #define VN100_RCC_APBPeriph RCC_APB1Periph_TIM7
 
 /* vn100 SPI Interface pins */
-#define VN100_SPI                       SPI4
-#define VN100_SPI_CLK                   RCC_APB2Periph_SPI4
+#define VN100_SPI                       SPI2
+#define VN100_SPI_CLK                   RCC_APB1Periph_SPI2
 
-#define VN100_SPI_SCK_PIN               GPIO_Pin_2                  /* PE.02 */
-#define VN100_SPI_SCK_GPIO_PORT         GPIOE                       /* GPIOE */
-#define VN100_SPI_SCK_GPIO_CLK          RCC_AHB1Periph_GPIOE
-#define VN100_SPI_SCK_SOURCE            GPIO_PinSource2
-#define VN100_SPI_SCK_AF                GPIO_AF_SPI4
+#define VN100_SPI_SCK_PIN               GPIO_Pin_1                  /* PI.01 */
+#define VN100_SPI_SCK_GPIO_PORT         GPIOI                      /* GPIOI */
+#define VN100_SPI_SCK_GPIO_CLK          RCC_AHB1Periph_GPIOI
+#define VN100_SPI_SCK_SOURCE            GPIO_PinSource1
+#define VN100_SPI_SCK_AF                GPIO_AF_SPI2
 
-#define VN100_SPI_MISO_PIN              GPIO_Pin_5                  /* PE.5 */
-#define VN100_SPI_MISO_GPIO_PORT        GPIOE                       /* GPIOE */
-#define VN100_SPI_MISO_GPIO_CLK         RCC_AHB1Periph_GPIOE
-#define VN100_SPI_MISO_SOURCE           GPIO_PinSource5
-#define VN100_SPI_MISO_AF               GPIO_AF_SPI4
+#define VN100_SPI_MISO_PIN              GPIO_Pin_14                  /* PB.14 */
+#define VN100_SPI_MISO_GPIO_PORT        GPIOB                       /* GPIOB */
+#define VN100_SPI_MISO_GPIO_CLK         RCC_AHB1Periph_GPIOB
+#define VN100_SPI_MISO_SOURCE           GPIO_PinSource14
+#define VN100_SPI_MISO_AF               GPIO_AF_SPI2
 
-#define VN100_SPI_MOSI_PIN              GPIO_Pin_6                  /* PE.06 */
-#define VN100_SPI_MOSI_GPIO_PORT        GPIOE                       /* GPIOE */
-#define VN100_SPI_MOSI_GPIO_CLK         RCC_AHB1Periph_GPIOE
-#define VN100_SPI_MOSI_SOURCE           GPIO_PinSource6
-#define VN100_SPI_MOSI_AF               GPIO_AF_SPI4
+#define VN100_SPI_MOSI_PIN              GPIO_Pin_3                  /* PI.03 */
+#define VN100_SPI_MOSI_GPIO_PORT        GPIOI                       /* GPIOI */
+#define VN100_SPI_MOSI_GPIO_CLK         RCC_AHB1Periph_GPIOI
+#define VN100_SPI_MOSI_SOURCE           GPIO_PinSource3
+#define VN100_SPI_MOSI_AF               GPIO_AF_SPI2
 
-#define VN100_SPI_CS_PIN                GPIO_Pin_12                  /* PI.00 */
-#define VN100_SPI_CS_GPIO_PORT          GPIOH                       /* GPIOI */
-#define VN100_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOH
+#define VN100_SPI_CS_PIN                GPIO_Pin_0                  /* PI.00 */
+#define VN100_SPI_CS_GPIO_PORT          GPIOI                       /* GPIOI */
+#define VN100_SPI_CS_GPIO_CLK           RCC_AHB1Periph_GPIOI
 
 
 /* Chip select macros */

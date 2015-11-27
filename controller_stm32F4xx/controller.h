@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.140
+ * Model version      : 1.154
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Mon Sep 14 16:02:44 2015
+ * C/C++ source code generated on  : Tue Nov 10 11:56:38 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -49,15 +49,17 @@
 /* Block signals and states (auto storage) for system '<Root>' */
 typedef struct {
   real_T IC[10];                       /* '<Root>/IC' */
-  real_T IC2[11];                      /* '<Root>/IC2' */
+  real_T IC2[12];                      /* '<Root>/IC2' */
   real_T UnitDelay_DSTATE[4];          /* '<Root>/Unit Delay' */
   real_T UnitDelay1_DSTATE[4];         /* '<Root>/Unit Delay1' */
   real_T UnitDelay2_DSTATE[4];         /* '<Root>/Unit Delay2' */
+  real_T ERR_INTEGRALE[4];             /* '<Root>/Data Store Memory13' */
   real_T ROLLOVER_FLAG[4];             /* '<Root>/Data Store Memory3' */
   real_T ANTI_ROLLOVER_CORRECTION;     /* '<Root>/Data Store Memory' */
   real_T PID_SATURATION_THRESHOLD;     /* '<Root>/Data Store Memory1' */
   real_T MAX_DV_ANGLE_LEFT;            /* '<Root>/Data Store Memory10' */
   real_T MIN_DV_ANGLE_LEFT;            /* '<Root>/Data Store Memory11' */
+  real_T SAMPLING_INTERVAL;            /* '<Root>/Data Store Memory12' */
   real_T MAX_ANGLE_DIFFERENCE;         /* '<Root>/Data Store Memory2' */
   real_T MAX_RP_ANGLE_RIGHT;           /* '<Root>/Data Store Memory4' */
   real_T MIN_RP_ANGLE_RIGHT;           /* '<Root>/Data Store Memory5' */
@@ -71,10 +73,10 @@ typedef struct {
 
 /* Constant parameters (auto storage) */
 typedef struct {
-  /* Expression: [0,20,360,1,1,-1,-1,1,1,-1,-1].'
+  /* Expression: [0,20,360,1,1,-1,-1,1,1,-1,-1,0.01].'
    * Referenced by: '<Root>/IC2'
    */
-  real_T IC2_Value[11];
+  real_T IC2_Value[12];
 } ConstP_controller;
 
 /* External inputs (root inport signals with auto storage) */
@@ -86,8 +88,8 @@ typedef struct {
   uint16_T rawAngle;                   /* '<Root>/rawAngle' */
   uint8_T magneticField;               /* '<Root>/magneticField' */
   real_T angle[4];                     /* '<Root>/angle' */
-  real_T pid_gian[4];                  /* '<Root>/pid_gian' */
-  real_T actuator_ctrl_params[11];     /* '<Root>/actuator_ctrl_params' */
+  real_T pid_gian[6];                  /* '<Root>/pid_gian' */
+  real_T actuator_ctrl_params[12];     /* '<Root>/actuator_ctrl_params' */
 } ExtU_controller;
 
 /* External outputs (root outports fed by signals with auto storage) */
@@ -104,6 +106,7 @@ typedef struct {
   real_T M3B;                          /* '<Root>/M3B' */
   real_T debug[4];                     /* '<Root>/debug' */
   real_T time;                         /* '<Root>/time' */
+  real_T ubldc[4];                     /* '<Root>/ubldc' */
 } ExtY_controller;
 
 /* Real-time Model Data Structure */

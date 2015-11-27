@@ -19,6 +19,8 @@
 %   gain(2): right-left leg Kp
 %   gain(3): right-left forelimb Kd
 %   gain(4): right-left leg Kd
+%   gain(5): right-left forelimb Ki
+%   gain(6): right-left leg Ki
 % u: control action, 4-by-1 vec
 %   u(1): right forelimb
 %   u(2): left forelimb
@@ -42,6 +44,8 @@ global MAX_RP_ANGLE_LEFT;
 global MAX_DV_ANGLE_LEFT;
 global MIN_RP_ANGLE_LEFT;
 global MIN_DV_ANGLE_LEFT;
+global SAMPLING_INTERVAL;
+global ERR_INTEGRALE;
 
 Kp = [gain(1),0,0,0;...
       0, gain(1),0,0;...
@@ -52,13 +56,19 @@ Kd = [gain(3),0,0,0;...
       0, gain(3),0,0;...
       0, 0,gain(4),0;...
       0, 0, 0,gain(4)];
+  
+Ki = [gain(5),0,0,0;...
+      0, gain(5),0,0;...
+      0, 0,gain(6),0;...
+      0, 0, 0,gain(6)];  
 
 % compute error and derr
 err = angle - des_angle;
-derr = err-prev_err;
+derr = (err-prev_err)/SAMPLING_INTERVAL;
+ERR_INTEGRALE = ERR_INTEGRALE + err;
 
 % computer u
-u = -Kp*err -Kd*derr;
+u = -Kp*err -Kd*derr -Ki*ERR_INTEGRALE;
 
 % turn-off the controller immediately when hit the limits
 DEG2RAD = pi/180; % rad\deg

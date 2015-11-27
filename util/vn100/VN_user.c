@@ -50,18 +50,18 @@ void SPI_initialize(void) {
 	RCC_AHB1PeriphClockCmd(VN100_SPI_SCK_GPIO_CLK, ENABLE);
 
 			/* GPIO default Value */
-	//GPIO_DeInit(VN100_SPI_CS_GPIO_PORT);
+	GPIO_DeInit(VN100_SPI_CS_GPIO_PORT);
 	GPIO_DeInit(VN100_SPI_SCK_GPIO_PORT);
-	//GPIO_DeInit(VN100_SPI_MISO_GPIO_PORT);
+	GPIO_DeInit(VN100_SPI_MISO_GPIO_PORT);
 	GPIO_DeInit(VN100_SPI_MOSI_GPIO_PORT);
 
-//
-	//GPIO_InitStructure.GPIO_Pin = VN100_SPI_CS_PIN;
-	//GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
-	//GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	//GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	//GPIO_Init(VN100_SPI_CS_GPIO_PORT, &GPIO_InitStructure);
-//
+
+	GPIO_InitStructure.GPIO_Pin = VN100_SPI_CS_PIN;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_Init(VN100_SPI_CS_GPIO_PORT, &GPIO_InitStructure);
+
 	GPIO_InitStructure.GPIO_Pin = VN100_SPI_SCK_PIN;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_25MHz;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
