@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.154
+ * Model version      : 1.164
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Tue Nov 10 11:56:38 2015
+ * C/C++ source code generated on  : Sun Dec 06 06:07:25 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -35,10 +35,11 @@
 
 /* Constant parameters (auto storage) */
 const ConstP_controller controller_ConstP = {
-  /* Expression: [0,20,360,1,1,-1,-1,1,1,-1,-1,0.01].'
+  /* Expression: [0,20,360,1,1,-1,-1,1,1,-1,-1,0.01,0,0].'
    * Referenced by: '<Root>/IC2'
    */
-  { 0.0, 20.0, 360.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 0.01 }
+  { 0.0, 20.0, 360.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 0.01, 0.0, 0.0
+  }
 };
 
 /* File trailer for Real-Time Workshop generated code.

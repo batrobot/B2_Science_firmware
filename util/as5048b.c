@@ -73,7 +73,7 @@ void AS5048B_initialize_I2C(void){
 	AS5048B_I2C_Initx.I2C_Ack = I2C_Ack_Disable;
 	AS5048B_I2C_Initx.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
 	AS5048B_I2C_Initx.I2C_ClockSpeed = AS5048B_CLOCKSPEED;
-	AS5048B_I2C_Initx.I2C_DutyCycle = I2C_DutyCycle_2;
+	AS5048B_I2C_Initx.I2C_DutyCycle = I2C_DutyCycle_16_9;
 	AS5048B_I2C_Initx.I2C_Mode = I2C_Mode_I2C;
 	AS5048B_I2C_Initx.I2C_OwnAddress1 = 0;
 
@@ -101,25 +101,13 @@ void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag
 	{
 		_chipAddress = _encAddressList[i];
 		
-		// read sensor diagnastic reg
-		diagReg = AS5048B_getDiagReg();
 		
-		if ((diagReg >> AS5048B_DIAG_OCF_OFFSET) && !(diagReg >> AS5048B_DIAG_COF_OFFSET) && !(diagReg >> AS5048B_DIAG_COMPHIGH_OFFSET) && !(diagReg >> AS5048B_DIAG_COMPLOW_OFFSET))
-		{
-			angleReg[i] = AS5048B_angleRegR(); 
-			autoGain[i] = AS5048B_getAutoGain();
-			diag[i] = AS5048B_getDiagReg();
-			magnitude[i] = AS5048B_magnitudeR();
-			angle[i] = AS5048B_angleR(U_DEG, true);					
-		}
-		else
-		{
-			angleReg[i] = 0; 
-			autoGain[i] = 0;
-			diag[i] = 0;
-			magnitude[i] = 0;
-			angle[i] = 0;		
-		}	
+		angleReg[i] = AS5048B_angleRegR();
+		autoGain[i] = AS5048B_getAutoGain();
+		diag[i] = AS5048B_getDiagReg();
+		magnitude[i] = AS5048B_magnitudeR();
+		angle[i] = AS5048B_angleR(U_DEG, true);
+		
 	}
 	
 }
@@ -395,9 +383,6 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 		}
 	}
 	
-	 //stop
-	//I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
-	
 	 //wait until I2C is not busy any more
 	counter = 0;
 	while (I2C_GetFlagStatus(AS5048B_I2Cx, I2C_FLAG_BUSY)) {
@@ -407,6 +392,9 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 			break;
 		}
 	}
+
+	 //stop
+	//I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
 		
 	// send I2C START condition 
 	I2C_GenerateSTART(AS5048B_I2Cx, ENABLE);

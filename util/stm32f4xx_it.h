@@ -48,6 +48,9 @@ void UsageFault_Handler(void);
 void SVC_Handler(void);
 void DebugMon_Handler(void);
 void PendSV_Handler(void);
+void SDIO_IRQHandler(void);
+void SD_SDIO_DMA_IRQHANDLER(void);
+	
 
 
 #ifdef __cplusplus

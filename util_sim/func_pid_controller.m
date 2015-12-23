@@ -46,6 +46,7 @@ global MIN_RP_ANGLE_LEFT;
 global MIN_DV_ANGLE_LEFT;
 global SAMPLING_INTERVAL;
 global ERR_INTEGRALE;
+global ANTI_WINDUP_THRESHOLD;
 
 Kp = [gain(1),0,0,0;...
       0, gain(1),0,0;...
@@ -67,6 +68,14 @@ err = angle - des_angle;
 derr = (err-prev_err)/SAMPLING_INTERVAL;
 ERR_INTEGRALE = ERR_INTEGRALE + err;
 
+for i=1:4
+    if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD
+        ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD;
+    end
+    if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD
+        ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD;
+    end
+end
 % computer u
 u = -Kp*err -Kd*derr -Ki*ERR_INTEGRALE;
 

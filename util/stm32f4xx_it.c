@@ -29,6 +29,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
+#include "stm32f4_sdio_sd.h"
 
 /** @addtogroup STM32F429I_DISCOVERY_Examples
   * @{
@@ -137,6 +138,26 @@ void PendSV_Handler(void)
 {
 }
 
+/**
+  * @brief  This function handles SDIO global interrupt request.
+  * @param  None
+  * @retval None
+  */
+void SDIO_IRQHandler(void)
+{
+  /* Process All SDIO Interrupt Sources */
+	SD_ProcessIRQSrc();
+}
+
+/**
+  * @brief  This function handles DMA interrupt.
+  * @param  None
+  * @retval None
+  */
+void SD_SDIO_DMA_IRQHANDLER(void)
+{
+	SD_ProcessDMAIRQ();
+}
 
 /******************************************************************************/
 /*                 STM32F4xx Peripherals Interrupt Handlers                   */
