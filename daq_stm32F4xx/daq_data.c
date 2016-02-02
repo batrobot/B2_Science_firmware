@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.69
+ * Model version      : 1.74
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Dec 20 19:05:58 2015
+ * C/C++ source code generated on  : Sun Dec 27 14:14:33 2015
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4

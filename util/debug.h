@@ -36,9 +36,26 @@
 #define DEBUG_h_
 
 #include "rtwtypes.h"
+#include <stdio.h>
 
-/**/
-extern uint8_T debug_printf(const char *buff, unsigned int buffLength);
+/* DAQ and controller loop at this rate */
+#define SAMPLE_TIME 0.002
+
+/* Tuning increments */
+#define INC_KP					10.0
+#define INC_KD					0.1
+#define INC_KI					0.1
+#define INC_POS					10
+#define INC_POS_TOL				0.01
+#define INC_AWU					100
+#define INC_PWM_CMD				5
+#define INC_FLIGHT_PARAM		0.05
+
+/* global vars */
+
+
+/* global functions */
+void debug_bat_robot(void);
 
 
 
