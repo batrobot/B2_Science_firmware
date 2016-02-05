@@ -47,6 +47,9 @@
 #include "diskio.h"
 #include "ff.h"
 
+/* DAQ and controller loop at this rate */
+#define SAMPLE_TIME 0.002
+
 /* Uncomment for debug msg over USART port */
 #define DEBUG_MAIN
 
@@ -77,8 +80,9 @@ static uint32_t autoReloadTimerLoopVal_S = 1;
 /* Remaining number of auto reload timer rotation to do */
 static uint32_t remainAutoReloadTimerLoopVal_S = 1;
 
-/**/
+/* These vars are used for calibration purposes */
 extern boolean_T calibrate_encs;
+extern boolean_T save_param_on_SD;
 extern double motor_cmd[4];
 
 /* PWM duty cicle to PA3, PB1, PE5, PE6 */
@@ -91,19 +95,25 @@ int16_T _pwm_pe6;
 SD_Error SD_err;
 FATFS fs;
 FIL	data;							// File object 
+FIL	param;
 FRESULT	fresult;					// FatFs return code 
 FILINFO info;
 SD_Error SDstatus;
 char_T buffstr[1000];			// Line buffer 
 char_T filename[16];			// File name buffer
+char_T line[1000];				// Line buffer 
 UINT bw, strlength;
 
-/* Some vars to read encoders*/
+/* Some vars to read encoders */
 uint16_t angleReg[4] = {0, 0, 0, 0};
 uint8_t autoGain[4] = {0, 0, 0, 0};
 uint8_t diag[4] = {0, 0, 0, 0};
 uint16_t magnitude[4] = {0, 0, 0, 0};
 double angle[4] = {0, 0, 0, 0};
+
+/* Some vars for vector nav measurments */
+VN100_SPI_Packet *packet;
+float yaw, pitch, roll;
 
 /* Private functions */
 void NVIC_Configuration(void);
@@ -137,12 +147,7 @@ void SysTick_Handler(void)
 	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	
 	/* vn100 read yaw, pitch, and roll */
-	VN100_SPI_Packet *packet;
-	float yaw, pitch, roll;
 	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
-	//roll = 0;
-	//pitch = 0;
-	//yaw = 0;
 	
 	/* inpute to controller here */
 	controller_U.pid_gian[0]; // forelimb Kp 
@@ -159,9 +164,9 @@ void SysTick_Handler(void)
 	controller_U.actuator_ctrl_params[5] = 225; // MIN_RP_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[6] = 145; // MIN_DV_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[7] = 110; // MAX_RP_ANGLE_LEFT [deg]
-	controller_U.actuator_ctrl_params[8] = 82; // MAX_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[8] = 80; // MAX_DV_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[9] = 60; // MIN_RP_ANGLE_LEFT [deg]
-	controller_U.actuator_ctrl_params[10] = 32; // MIN_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[10] = 0; // MIN_DV_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[11] = SAMPLE_TIME; // Sample interval
 	controller_U.actuator_ctrl_params[12];		// PID_TRACKING_PRECISION_THRESHOLD
 	controller_U.actuator_ctrl_params[13];		// ANTI_WINDUP_THRESHOLD
@@ -179,15 +184,15 @@ void SysTick_Handler(void)
 	controller_U.flight_ctrl_params[9];  // L_leq [deg]
 	
 	// IMU
-	controller_U.roll = 0;
-	controller_U.pitch = 0;
-	controller_U.yaw = 0;
+	controller_U.roll = roll;
+	controller_U.pitch = pitch;
+	controller_U.yaw = yaw;
 	
 	// Encoders
 	controller_U.angle[0] = angle[0]; // Right forelimb
 	controller_U.angle[1] = angle[2]; // Left forelimb
 	controller_U.angle[2] = 0; // Right tail
-	controller_U.angle[3] = 0; // Left tail 
+	controller_U.angle[3] = angle[1]; // Left tail 
 	
 	/* Step the controller for base rate */
 	controller_step();
@@ -201,11 +206,11 @@ void SysTick_Handler(void)
 		_pwm_pb1  = controller_Y.M1B;
 		daq_U.pwm_pa1; // Right leg
 		daq_U.pwm_pa0;
-		daq_U.pwm_pa2; // Left leg
-		_pwm_pa3;
+		daq_U.pwm_pa2 = controller_Y.M3B; // Left leg
+		_pwm_pa3 = controller_Y.M3A;
 	}
 	else
-	{
+	{						// Calibrate sensors by driving the spindle...
 		daq_U.pwm_pa6 = 0;
 		daq_U.pwm_pa7 = 0;
 		daq_U.pwm_pb0  = 0;
@@ -272,7 +277,8 @@ void SysTick_Handler(void)
 	
 		/* find the length of the datalog file */
 		fresult = f_stat("data.txt", &info);  
-		
+ 
+		sprintf(filename, "data.txt"); 
 		fresult = f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE);
 		
 		/* If the file existed seek to the end */
@@ -291,6 +297,103 @@ void SysTick_Handler(void)
 		fresult = f_write(&data, buffstr, strlen(buffstr), &bw);
 		
 		f_close(&data); 
+		
+		if (save_param_on_SD)
+		{
+			/* Save params as param.txt file on SD card. */ 
+			// forelimb Kp 
+			// leg Kp
+			// forelimb Kd 
+			// leg Kd
+			// forelimb Ki 
+			// leg Ki 
+			// PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
+			// MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
+			// ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
+			// MAX_RP_ANGLE_RIGHT [deg] 
+			// MAX_DV_ANGLE_RIGHT [deg]
+			// MIN_RP_ANGLE_RIGHT [deg]
+			// MIN_DV_ANGLE_RIGHT [deg]
+			// MAX_RP_ANGLE_LEFT [deg]
+			// MAX_DV_ANGLE_LEFT [deg]
+			// MIN_RP_ANGLE_LEFT [deg]
+			// MIN_DV_ANGLE_LEFT [deg]
+			// Sample interval
+			// PID_TRACKING_PRECISION_THRESHOLD
+			// ANTI_WINDUP_THRESHOLD
+			// ROLL_SENSITIVITY [-] -0.01
+			// PITCH_SENSITIVITY [-] 0.001
+			// MAX_FORELIMB_ANGLE [deg] (n.a.)
+			// MIN_FORELIMB_ANGLE [deg] (n.a.)
+			// MAX_LEG_ANGLE [deg] (n.a.)
+			// MIN_LEG_ANGLE [deg] (n.a.)
+			// R_foreq  [deg]
+			// L_foreq [deg]
+			// R_leq [deg]
+			// L_leq [deg]
+			
+			sprintf(filename, "param.txt"); 
+			/* open file on SD card */
+			while (f_open(&param, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
+				;
+	//
+			///* write the header to file */
+			//char *header = "I wrote params on SD for you :). \r\n";
+			//while (f_write(&param, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
+				//;	
+			
+			/* close file */
+			f_close(&param);
+			
+			/* Flight params are saved on SD card per request... */
+			// 1st col: .....
+	
+			/* find the length of the datalog file */
+			fresult = f_stat("param.txt", &info);  
+		
+			fresult = f_open(&param, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		
+			/* If the file existed seek to the end */
+			//if (fresult == FR_OK) f_lseek(&param, info.fsize);
+			sprintf(buffstr,
+				"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f,\r\n", 
+				controller_U.pid_gian[0],
+				controller_U.pid_gian[1],
+				controller_U.pid_gian[2],
+				controller_U.pid_gian[3],
+				controller_U.pid_gian[4],
+				controller_U.pid_gian[5],
+				controller_U.actuator_ctrl_params[0],
+				controller_U.actuator_ctrl_params[1],
+				controller_U.actuator_ctrl_params[2],
+				controller_U.actuator_ctrl_params[3],
+				controller_U.actuator_ctrl_params[4],
+				controller_U.actuator_ctrl_params[5],
+				controller_U.actuator_ctrl_params[6],
+				controller_U.actuator_ctrl_params[7],
+				controller_U.actuator_ctrl_params[8],
+				controller_U.actuator_ctrl_params[9],
+				controller_U.actuator_ctrl_params[10],
+				controller_U.actuator_ctrl_params[11],
+				controller_U.actuator_ctrl_params[12],
+				controller_U.actuator_ctrl_params[13],
+				controller_U.flight_ctrl_params[0],
+				controller_U.flight_ctrl_params[1],
+				controller_U.flight_ctrl_params[2],
+				controller_U.flight_ctrl_params[3],
+				controller_U.flight_ctrl_params[4],
+				controller_U.flight_ctrl_params[5],
+				controller_U.flight_ctrl_params[6],
+				controller_U.flight_ctrl_params[7],
+				controller_U.flight_ctrl_params[8],
+				controller_U.flight_ctrl_params[9]);
+			fresult = f_write(&param, buffstr, strlen(buffstr), &bw);
+			f_close(&param); 
+			
+			// update 
+			save_param_on_SD = false;
+		}
+		
 		/////////////////////////////// buffer data on SD card  ///////////////////////////////////	
 	}
 	
@@ -377,6 +480,64 @@ int main (void)
 			/* close file */
 		f_close(&data);
 	
+		/* open file on SD card */
+		char *pch;
+		float var, varVector[30];
+		uint8_T index = 0;
+		
+		/* Read param.txt file on SD card. */ 
+		sprintf(filename, "param.txt"); 
+		if (f_open(&param, filename, FA_READ) == FR_OK)
+		{
+			/* Read param line */
+			f_gets(line, sizeof line, &param);
+			pch = strtok(line, " ,");
+			while (pch != NULL)
+			{
+				sscanf(pch, "%f", &var);
+				pch = strtok(NULL, " ,");
+				varVector[index] = var;
+				index++;
+			}
+		
+			/* Write servo params */
+			for (index = 0;index < 6;index++)
+			{
+				controller_U.pid_gian[index] = varVector[index];
+			}
+			for (index = 0;index < 14;index++)
+			{
+				controller_U.actuator_ctrl_params[index] = varVector[index + 6];
+			}
+			/* Write fligth control params */
+			for (index = 0;index < 10;index++)
+			{
+				controller_U.flight_ctrl_params[index] = varVector[index + 20];
+			}
+		}
+		else
+		{
+			/* Write servo params */
+			for (index = 0;index < 6;index++)
+			{
+				controller_U.pid_gian[index] = 0;
+			}
+			for (index = 0;index < 14;index++)
+			{
+				controller_U.actuator_ctrl_params[index] = 0;
+			}
+			/* Write fligth control params */
+			for (index = 0;index < 10;index++)
+			{
+				controller_U.flight_ctrl_params[index] = 0;
+			}
+		}
+		
+		
+		
+		/* Close the file */
+		f_close(&param);
+		
 		/////////////////////////////// Make a quick header for SD log file ///////////////////////////////////	
 	}
 	

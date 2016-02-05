@@ -38,9 +38,6 @@
 #include "rtwtypes.h"
 #include <stdio.h>
 
-/* DAQ and controller loop at this rate */
-#define SAMPLE_TIME 0.002
-
 /* Tuning increments */
 #define INC_KP					10.0
 #define INC_KD					0.1

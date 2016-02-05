@@ -32,19 +32,15 @@
  * ******************************************************************************
  */
 
-/**/
-
+/* Include headers */
 #include "debug.h"
 #include "stm32f4xx_conf.h"
 #include "daq.h"
 #include  "controller.h"
 
-
-/**/
+/* Some macros */
 #define DEBUG_NbRcv daq_Y.usart1_NbRcv
 #define DEBUG_RcvVal daq_Y.usart1_RcvVal
-
-/**/
 #define DEBUG_Nb2Send daq_U.usart1_Nb2Send
 #define DEBUG_SendVal daq_U.usart1_SendVal
 
@@ -54,6 +50,8 @@ uint32_T rcvbyte;
 char rcvbuff[1];
 boolean_T tune_servo_params = false;
 boolean_T tune_flight_ctrl_params = false;	
+boolean_T calibrate_encs = false;
+boolean_T save_param_on_SD = false;
 
 // servo number, e.g., 0,1,2,3
 // armwing, e.g. 0 or leg, e.g. 1 
@@ -63,11 +61,10 @@ uint8_T flight_param_num = 0;
 uint8_T servo_param_num = 0;
 double flight_params[2] = {0, 0};
 double servo_params[6] = {0, 0, 0, 0, 0, 0};
+double motor_cmd[4] = {0, 0, 0, 0};
 double servo_param_inc[6] = {INC_KP, INC_KD, INC_KI, INC_POS, INC_POS_TOL, INC_AWU};	
 double motor_cmd_inc = INC_PWM_CMD;
 double flight_param_inc = INC_FLIGHT_PARAM;
-boolean_T calibrate_encs = false;
-double motor_cmd[4] = {0, 0, 0, 0};
 
 /* extern vars */
 extern uint16_t angleReg[4];
@@ -96,7 +93,7 @@ void debug_bat_robot(void)
 	{		
 		if (strcmp(rcvbuff, "h") == 0)
 		{
-			sprintf(sendbuff, "please type in: q(quit), h(help), f(fl par), s(sens calib), c(ctrl), i(imu), m(magnet), e(enc), d(enc diag), 1, 2, 3, or 4 \r\n");
+			sprintf(sendbuff, "please type in: q(quit), h(help), w(write SD), f(fl par), s(sens calib), c(ctrl), i(imu), m(magnet), e(enc), d(enc diag), 1, 2, 3, or 4 \r\n");
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 		else if ((strcmp(rcvbuff, "1") == 0) || strcmp(rcvbuff, "2") == 0 || (strcmp(rcvbuff, "3") == 0) || strcmp(rcvbuff, "4") == 0)
@@ -125,6 +122,13 @@ void debug_bat_robot(void)
 				servo_num[0] = 3;
 				servo_num[1] = 1;
 			}
+		}
+		else if ((strcmp(rcvbuff, "w") == 0))
+		{
+			save_param_on_SD = true;
+			rcvbuff[0] = 0;
+			sprintf(sendbuff,"Param saved! \r\n");
+			debug_printf(sendbuff, strlen(sendbuff));		
 		}
 		else if (strcmp(rcvbuff, "f") == 0)
 		{
@@ -166,7 +170,7 @@ void debug_bat_robot(void)
 		}
 		else
 		{
-			sprintf(sendbuff, "Sample Time = %f, Internal Clock = %f \r\n", SAMPLE_TIME, controller_Y.time);
+			sprintf(sendbuff, "Internal Clock = %f \r\n", controller_Y.time);
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 	}
@@ -203,6 +207,8 @@ void debug_bat_robot(void)
 		servo_params[1] = controller_U.pid_gian[2 * 1 + servo_num[1]]; // Kd
 		servo_params[2] = controller_U.pid_gian[2 * 2 + servo_num[1]]; // Ki				
 		servo_params[3] = controller_U.flight_ctrl_params[6 + servo_num[0]]; // SERVO POS
+		servo_params[4] = controller_U.actuator_ctrl_params[12]; // POS TOL
+		servo_params[5] = controller_U.actuator_ctrl_params[13]; // ANTI-WIND-UP THRESHOLD
 		
 		// Update the specfied param
 		if (strcmp(rcvbuff, "w") == 0) 
