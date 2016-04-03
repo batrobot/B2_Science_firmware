@@ -38,6 +38,11 @@
 #include "rtwtypes.h"
 #include <stdio.h>
 
+/* debuging defs */
+#define _REC_SD_CARD	// buffer data on SD card
+//#define _BLUETOOTH		// buffer data over bluetooth
+
+
 /* Tuning increments */
 #define INC_KP					10.0
 #define INC_KD					0.1
@@ -46,12 +51,17 @@
 #define INC_POS_TOL				0.01
 #define INC_AWU					100
 #define INC_PWM_CMD				5
-#define INC_FLIGHT_PARAM		0.05
+#define INC_FLIGHT_PARAM		0.002
+#define INC_ANGLE_MAX_MIN		5
 
 /* global vars */
 
 
 /* global functions */
+void debug_write_params(void);
+void debug_write_data(void);
+void debug_initialize_files(void);
+boolean_T debug_check_bluetooth(void);
 void debug_bat_robot(void);
 
 

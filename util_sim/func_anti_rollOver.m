@@ -19,7 +19,7 @@
 % by ALireza Ramezani, 8-31-2015, Champaign, IL
 function angle_aro = func_anti_rollOver(angle,angle_prev)
 %#codegen
-angle_difference = zeros(4,1);
+% angle_difference = zeros(4,1);
 angle_aro = zeros(4,1);
 
 % guess max angular changes during one sample time
@@ -60,26 +60,26 @@ angle_difference = angle - angle_prev;
 % end
 
 
-for i=1:4
-    if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE)
-        if(angle_difference(i)<0)
-            ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1;
-        else
-            ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1;
-        end
-    end
-end
-
-angle_aro = angle + ANTI_ROLLOVER_CORRECTION_MATRIX*ROLLOVER_FLAG;
+% for i=1:4
+%     if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE)
+%         if(angle_difference(i)<0)
+%             ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1;
+%         else
+%             ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1;
+%         end
+%     end
+% end
+% 
+% angle_aro = angle + ANTI_ROLLOVER_CORRECTION_MATRIX*ROLLOVER_FLAG;
 
 
 % convert angles to radian
 angle_aro = DEG2RAD*angle_aro;
 
 % calibration materials
-max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].';
+% max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].';
 min_angle = DEG2RAD*[MIN_RP_ANGLE_RIGHT,MIN_RP_ANGLE_LEFT,MIN_DV_ANGLE_RIGHT,MIN_DV_ANGLE_LEFT].';
-delta_angle_matrix = diag(max_angle-min_angle);
+% delta_angle_matrix = diag(max_angle-min_angle);
 
 % calibrate angles
 angle_aro = angle_aro-min_angle;

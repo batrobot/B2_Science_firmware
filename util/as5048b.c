@@ -36,6 +36,7 @@
 
 /* Private functions */
 uint8_t		AS5048B_readReg8(uint8_t address);
+uint8_t		EXTRA_AS5048B_readReg8(uint8_t address);
 void		AS5048B_writeReg(uint8_t address, uint8_t value);
 double		AS5048B_convertAngle(int unit, double angle); 
 
@@ -43,7 +44,7 @@ double		AS5048B_convertAngle(int unit, double angle);
 boolean_T TIME_OUT_ERR = false;
 boolean_T _clockWise = false;
 uint8_t _numEncoders = 4;
-uint8_t	_encAddressList[4] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_C};
+uint8_t	_encAddressList[4] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_FACTORY};
 uint8_t _chipAddress = AS5048B_ADDRESS_FACTORY;
 
 /*******************************************************************************
@@ -78,6 +79,33 @@ void AS5048B_initialize_I2C(void){
 	AS5048B_I2C_Initx.I2C_OwnAddress1 = 0;
 
 	I2C_Init(AS5048B_I2Cx, &AS5048B_I2C_Initx);
+	
+	/* Extra I2C settings */
+	RCC_APB1PeriphClockCmd(EXTRA_AS5048B_RCC_APBPeriph, ENABLE);
+
+	RCC_AHB1PeriphClockCmd(EXTRA_AS5048B_RCC_AHBPeriph_GPIO, ENABLE);
+
+	GPIO_InitTypeDef EXTRA_AS5048B_GPIO_Init;
+	EXTRA_AS5048B_GPIO_Init.GPIO_Mode = GPIO_Mode_AF;
+	EXTRA_AS5048B_GPIO_Init.GPIO_OType = GPIO_OType_OD;
+	EXTRA_AS5048B_GPIO_Init.GPIO_Pin = EXTRA_AS5048B_GPIO_Pin_CLK | EXTRA_AS5048B_GPIO_Pin_SDA;
+	EXTRA_AS5048B_GPIO_Init.GPIO_PuPd = GPIO_PuPd_UP;
+	EXTRA_AS5048B_GPIO_Init.GPIO_Speed = EXTRA_AS5048B_GPIO_Speed;
+	GPIO_Init(EXTRA_AS5048B_GPIO, &EXTRA_AS5048B_GPIO_Init);
+
+	GPIO_PinAFConfig(EXTRA_AS5048B_GPIO, EXTRA_AS5048B_GPIO_PinSourceCLK, EXTRA_AS5048B_GPIO_AF_I2Cx);
+	GPIO_PinAFConfig(EXTRA_AS5048B_GPIO, EXTRA_AS5048B_GPIO_PinSourceSDA, EXTRA_AS5048B_GPIO_AF_I2Cx);
+
+	I2C_InitTypeDef EXTRA_AS5048B_I2C_Initx;
+	EXTRA_AS5048B_I2C_Initx.I2C_Ack = I2C_Ack_Disable;
+	EXTRA_AS5048B_I2C_Initx.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
+	EXTRA_AS5048B_I2C_Initx.I2C_ClockSpeed = AS5048B_CLOCKSPEED;
+	EXTRA_AS5048B_I2C_Initx.I2C_DutyCycle = I2C_DutyCycle_16_9;
+	EXTRA_AS5048B_I2C_Initx.I2C_Mode = I2C_Mode_I2C;
+	EXTRA_AS5048B_I2C_Initx.I2C_OwnAddress1 = 0;
+
+	I2C_Init(EXTRA_AS5048B_I2Cx, &EXTRA_AS5048B_I2C_Initx);
+	
 }
 
 
@@ -97,18 +125,22 @@ void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag
 	uint8_t i;
 	uint8_t diagReg;
 	
-	for (i = 0;i < _numEncoders;i++)
+	for (i = 0;i < _numEncoders-1;i++)
 	{
-		_chipAddress = _encAddressList[i];
-		
-		
+		_chipAddress = _encAddressList[i];	
 		angleReg[i] = AS5048B_angleRegR();
 		autoGain[i] = AS5048B_getAutoGain();
 		diag[i] = AS5048B_getDiagReg();
 		magnitude[i] = AS5048B_magnitudeR();
 		angle[i] = AS5048B_angleR(U_DEG, true);
-		
 	}
+	
+	_chipAddress = _encAddressList[i];		
+	angleReg[i] = EXTRA_AS5048B_angleRegR();
+	autoGain[i] = EXTRA_AS5048B_getAutoGain();
+	diag[i] = EXTRA_AS5048B_getDiagReg();
+	magnitude[i] = EXTRA_AS5048B_magnitudeR();
+	angle[i] = EXTRA_AS5048B_angleR(U_DEG, true);
 	
 }
 	
@@ -248,6 +280,25 @@ uint16_t AS5048B_magnitudeR(void) {
 	return readValue;
 }
 
+
+/*******************************************************************************
+* Function Name  : EXTRA_AS5048B_magnitudeR
+* Input          : None
+* Output         : None
+* Return         : uint16_t register value trimmed on 14 bits
+* Description    : reads the 2 bytes magnitude register value
+*******************************************************************************/
+uint16_t EXTRA_AS5048B_magnitudeR(void) {
+	uint16_t readValue;
+	uint8_t readArray[2];
+	readArray[0] = EXTRA_AS5048B_readReg8(AS5048B_MAGNMSB_REG);
+	readArray[1] = EXTRA_AS5048B_readReg8(AS5048B_MAGNLSB_REG);
+	
+	readValue = (((uint16_t) readArray[0]) << 6);
+	readValue += (readArray[1] & 0x3F);
+	return readValue;
+}
+
 /*******************************************************************************
 * Function Name  : AS5048B_angleRegR
 * Input          : None
@@ -267,6 +318,24 @@ uint16_t AS5048B_angleRegR(void) {
 }
 
 /*******************************************************************************
+* Function Name  : EXTRA_AS5048B_angleRegR
+* Input          : None
+* Output         : None
+* Return         : uint16_t register value trimmed on 14 bits
+* Description    : reads the 2 bytes angle register value
+*******************************************************************************/
+uint16_t EXTRA_AS5048B_angleRegR(void) {
+	int16_t readValue;
+	uint8_t readArray[2];
+	readArray[0] = EXTRA_AS5048B_readReg8(AS5048B_ANGLMSB_REG);
+	readArray[1] = EXTRA_AS5048B_readReg8(AS5048B_ANGLLSB_REG);
+	
+	readValue = (((uint16_t) readArray[0]) << 6);
+	readValue += (readArray[1] & 0x3F);
+	return readValue;
+}
+
+/*******************************************************************************
 * Function Name  : AS5048B_getAutoGain
 * Input          : None
 * Output         : None
@@ -279,6 +348,18 @@ uint8_t AS5048B_getAutoGain(void) {
 }
 
 /*******************************************************************************
+* Function Name  : EXTRA_AS5048B_getAutoGain
+* Input          : None
+* Output         : None
+* Return         : uint8_t register value 
+* Description    : reads the 1 bytes auto gain register value
+*******************************************************************************/
+uint8_t EXTRA_AS5048B_getAutoGain(void) {
+
+	return EXTRA_AS5048B_readReg8(AS5048B_GAIN_REG);
+}
+
+/*******************************************************************************
 * Function Name  : 
 * Input          : None
 * Output         : None
@@ -288,6 +369,18 @@ uint8_t AS5048B_getAutoGain(void) {
 uint8_t AS5048B_getDiagReg(void) {
 
 	return AS5048B_readReg8(AS5048B_DIAG_REG);
+}
+
+/*******************************************************************************
+* Function Name  : 
+* Input          : None
+* Output         : None
+* Return         : uint8_t register value 
+* Description    : reads the 1 bytes diagnostic register value
+*******************************************************************************/
+uint8_t EXTRA_AS5048B_getDiagReg(void) {
+
+	return EXTRA_AS5048B_readReg8(AS5048B_DIAG_REG);
 }
 
 /*******************************************************************************
@@ -305,6 +398,41 @@ double AS5048B_angleR(int unit, boolean_T newVal) {
 	uint8_t readArray[2];
 	readArray[0] = AS5048B_readReg8(AS5048B_ANGLMSB_REG);
 	readArray[1] = AS5048B_readReg8(AS5048B_ANGLLSB_REG);
+	
+	readValue = (((uint16_t) readArray[0]) << 6);
+	readValue += (readArray[1] & 0x3F);
+	
+	
+	if (newVal) {
+		if (_clockWise) {
+			angleRaw = (double)(0b11111111111111 - readValue);
+		}
+		else {
+			angleRaw = (double) readValue;
+		}
+	}
+	else {
+		angleRaw = 0.0;
+	}
+
+	return AS5048B_convertAngle(unit, angleRaw);
+}
+
+/*******************************************************************************
+* Function Name  : EXTRA_AS5048B_angleR
+* Input          : String unit : string expressing the unit of the angle. Sensor raw value as default
+*				 : Boolean newVal : have a new measurement or use the last read one. True as default
+* Output         : None
+* Return         : Double angle value converted into the desired unit
+* Description    : reads current angle value and converts it into the desired unit
+*******************************************************************************/
+double EXTRA_AS5048B_angleR(int unit, boolean_T newVal) {
+
+	double angleRaw;
+	int16_t readValue;
+	uint8_t readArray[2];
+	readArray[0] = EXTRA_AS5048B_readReg8(AS5048B_ANGLMSB_REG);
+	readArray[1] = EXTRA_AS5048B_readReg8(AS5048B_ANGLLSB_REG);
 	
 	readValue = (((uint16_t) readArray[0]) << 6);
 	readValue += (readArray[1] & 0x3F);
@@ -437,6 +565,119 @@ uint8_t AS5048B_readReg8(uint8_t address) {
 	
 	// stop
 	I2C_GenerateSTOP(AS5048B_I2Cx, ENABLE);
+	
+	
+	return readValue;
+}
+
+/*******************************************************************************
+* Function Name  : EXTRA_AS5048B_readReg8
+* Input          : uint8_t address
+* Output         : uint8_t address
+* Return         : None
+* Description    : read register for given address
+*******************************************************************************/
+uint8_t EXTRA_AS5048B_readReg8(uint8_t address) {
+	
+	uint8_t readValue;
+	int counter = 0;
+	
+	// wait until I2C is not busy any more
+	while (I2C_GetFlagStatus(EXTRA_AS5048B_I2Cx, I2C_FLAG_BUSY)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+		
+	// send I2C START condition 
+	counter = 0;
+	I2C_GenerateSTART(EXTRA_AS5048B_I2Cx, ENABLE);
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_MODE_SELECT)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+
+	//send slave address for write 
+	counter = 0;
+	I2C_Send7bitAddress(EXTRA_AS5048B_I2Cx, _chipAddress, I2C_Direction_Transmitter);
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+	
+	//send slave register address for write
+	counter = 0;
+	I2C_SendData(EXTRA_AS5048B_I2Cx, address);
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_TRANSMITTED)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+	
+	 //wait until I2C is not busy any more
+	counter = 0;
+	while (I2C_GetFlagStatus(EXTRA_AS5048B_I2Cx, I2C_FLAG_BUSY)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+
+	 //stop
+	//I2C_GenerateSTOP(EXTRA_AS5048B_I2Cx, ENABLE);
+		
+	// send I2C START condition 
+	I2C_GenerateSTART(EXTRA_AS5048B_I2Cx, ENABLE);
+	
+	counter = 0;
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_MODE_SELECT)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+	
+	// send slave address to read
+	counter = 0;
+	I2C_Send7bitAddress(EXTRA_AS5048B_I2Cx, _chipAddress, I2C_Direction_Receiver);
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+	
+	// enable acknowledge of received data
+	//I2C_AcknowledgeConfig(EXTRA_AS5048B_I2Cx, ENABLE);
+	
+	// wait until one byte has been received
+	counter = 0;
+	while (!I2C_CheckEvent(EXTRA_AS5048B_I2Cx, I2C_EVENT_MASTER_BYTE_RECEIVED)) {
+		counter++;
+		if (counter == TIME_OUT_DELAY) {
+			TIME_OUT_ERR = true;
+			break;
+		}
+	}
+	
+	// read data from I2C data register and return data byte
+	readValue = I2C_ReceiveData(EXTRA_AS5048B_I2Cx);
+	
+	// stop
+	I2C_GenerateSTOP(EXTRA_AS5048B_I2Cx, ENABLE);
 	
 	
 	return readValue;

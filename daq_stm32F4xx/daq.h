@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.74
+ * Model version      : 1.83
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Dec 27 14:14:33 2015
+ * C/C++ source code generated on  : Fri Mar 04 19:58:53 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -119,6 +119,9 @@ typedef struct {
   uint16_T pe2;                        /* '<Root>/pe2' */
   uint16_T pe3;                        /* '<Root>/pe3' */
   uint16_T pe4;                        /* '<Root>/pe4' */
+  real_T dc1;                          /* '<Root>/dc1' */
+  real_T dc2;                          /* '<Root>/dc2' */
+  real_T dc3;                          /* '<Root>/dc3' */
 } ExtY_daq;
 
 /* Parameters (auto storage) */

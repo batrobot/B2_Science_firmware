@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :daq.
  *
- * Model version      : 1.74
+ * Model version      : 1.83
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Dec 27 14:14:33 2015
+ * C/C++ source code generated on  : Fri Mar 04 19:58:53 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -38,6 +38,28 @@
 #define USART3_RX_STRING_SIZE          100
 #define USART6_RX_BUFF_SIZE            1000
 #define USART6_RX_STRING_SIZE          100
+
+/* Global Variable Definition for TIM8 Configuration */
+TIM_TimeBaseInitTypeDef TIM8_TimeBaseStructure;
+TIM_ICInitTypeDef TIM8_ICInitStructure;
+TIM_BDTRInitTypeDef TIM8_BDTRInitStructure;
+NVIC_InitTypeDef TIM8_NVIC_InitStructure;
+__IO uint16_t TIM8_ICC1ReadValue1 = 0, TIM8_ICC1ReadValue2 = 0;
+__IO uint16_t TIM8_ICC1CaptureNumber = 0;
+__IO uint32_t TIM8_ICC1Capture = 0;
+__IO uint32_t TIM8_ICC1Freq = 0;
+__IO uint16_t TIM8_ICC2ReadValue1 = 0, TIM8_ICC2ReadValue2 = 0;
+__IO uint16_t TIM8_ICC2CaptureNumber = 0;
+__IO uint32_t TIM8_ICC2Capture = 0;
+__IO uint32_t TIM8_ICC2Freq = 0;
+__IO uint16_t TIM8_ICC3ReadValue1 = 0, TIM8_ICC3ReadValue2 = 0;
+__IO uint16_t TIM8_ICC3CaptureNumber = 0;
+__IO uint32_t TIM8_ICC3Capture = 0;
+__IO uint32_t TIM8_ICC3Freq = 0;
+
+/*Global variable for APB1/APB2 prescaler from RCC_Configuration.c file */
+extern uint32_t RCC_APB1_Prescaler;
+extern uint32_t RCC_APB2_Prescaler;
 
 /* Global Variable Definition for TIM2 Configuration */
 TIM_TimeBaseInitTypeDef TIM2_TimeBaseStructure;
@@ -253,6 +275,9 @@ ExtY_daq daq_Y;
 RT_MODEL_daq daq_M_;
 RT_MODEL_daq *const daq_M = &daq_M_;
 
+/* Function Declaration for TIM8 Configuration */
+void TIM8_Configuration(void);
+
 /* Function Declaration for TIM2 Configuration */
 void TIM2_Configuration(void);
 
@@ -304,6 +329,183 @@ void USART1_Config(void);
 
 /* Function Declaration for USART3 Configuration */
 void USART3_Config(void);
+
+/*******************************************************************************
+ * Function Name  : TIM8_Configuration
+ * Description    : TIM8 PWM output or Input_Capture Configuration
+ * Input          : -
+ *******************************************************************************/
+void TIM8_Configuration(void)
+{
+  /* Time base configuration */
+  switch (RCC_APB2_Prescaler) {
+   case RCC_HCLK_Div4:
+    TIM8_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /2) /
+      5000000) - 1;
+    break;
+
+   case RCC_HCLK_Div8:
+    TIM8_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /4) /
+      5000000) - 1;
+    break;
+
+   case RCC_HCLK_Div16:
+    TIM8_TimeBaseStructure.TIM_Prescaler = (uint16_t) ((SystemCoreClock /8) /
+      5000000) - 1;
+    break;
+
+   default:
+    TIM8_TimeBaseStructure.TIM_Prescaler = (uint16_t)(SystemCoreClock / 5000000)
+      - 1;
+    break;
+  }
+
+  TIM8_TimeBaseStructure.TIM_Period = 0xFFFF;
+  TIM8_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+  TIM8_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseInit(TIM8, &TIM8_TimeBaseStructure);
+
+  /* Input_Capture mode configuration: Channel CH1*/
+  TIM8_ICInitStructure.TIM_Channel = TIM_Channel_1;
+  TIM8_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_BothEdge;
+  TIM8_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+  TIM8_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+  TIM8_ICInitStructure.TIM_ICFilter = 0;
+  TIM_ICInit(TIM8, &TIM8_ICInitStructure);
+
+  /* Input_Capture mode configuration: Channel CH2*/
+  TIM8_ICInitStructure.TIM_Channel = TIM_Channel_2;
+  TIM8_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_BothEdge;
+  TIM8_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+  TIM8_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+  TIM8_ICInitStructure.TIM_ICFilter = 0;
+  TIM_PWMIConfig(TIM8, &TIM8_ICInitStructure);
+
+  /* Input_Capture mode configuration: Channel CH3*/
+  TIM8_ICInitStructure.TIM_Channel = TIM_Channel_3;
+  TIM8_ICInitStructure.TIM_ICPolarity = TIM_ICPolarity_BothEdge;
+  TIM8_ICInitStructure.TIM_ICSelection = TIM_ICSelection_DirectTI;
+  TIM8_ICInitStructure.TIM_ICPrescaler = TIM_ICPSC_DIV1;
+  TIM8_ICInitStructure.TIM_ICFilter = 0;
+  TIM_PWMIConfig(TIM8, &TIM8_ICInitStructure);
+
+  /* Enable the TIM8 global Interrupt */
+  TIM8_NVIC_InitStructure.NVIC_IRQChannel = TIM8_CC_IRQn;
+  TIM8_NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+  TIM8_NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+  TIM8_NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+  NVIC_Init(&TIM8_NVIC_InitStructure);
+
+  /* TIM8 enable counter */
+  TIM_Cmd(TIM8, ENABLE);
+
+  /* Enable the CC1 Interrupt Request */
+  TIM_ITConfig(TIM8, TIM_IT_CC1, ENABLE);
+
+  /* Enable the CC2 Interrupt Request */
+  TIM_ITConfig(TIM8, TIM_IT_CC2, ENABLE);
+
+  /* Enable the CC3 Interrupt Request */
+  TIM_ITConfig(TIM8, TIM_IT_CC3, ENABLE);
+}
+
+/*******************************************************************************
+ * Function Name  : TIM8_CC_IRQHandler
+ * Description    : This function handles TIM8 Input_Capture interrupt request.
+ * Input          : -
+ *******************************************************************************/
+void TIM8_CC_IRQHandler(void)
+{
+  /*Test if Input_Capture interrupt on channel 1*/
+  if (TIM_GetITStatus(TIM8, TIM_IT_CC1) == SET) {
+    /* Clear TIM8 Capture compare interrupt pending bit */
+    TIM_ClearITPendingBit(TIM8, TIM_IT_CC1);
+    if (TIM8_ICC1CaptureNumber == 0) {
+      /* Get the Input_Capture value */
+      TIM8_ICC1ReadValue1 = TIM_GetCapture1(TIM8);
+      TIM8_ICC1CaptureNumber = 1;
+    } else if (TIM8_ICC1CaptureNumber == 1) {
+      /* Get the Input_Capture value */
+      TIM8_ICC1ReadValue2 = TIM_GetCapture1(TIM8);
+
+      /* Capture computation */
+      if (TIM8_ICC1ReadValue2 > TIM8_ICC1ReadValue1) {
+        TIM8_ICC1Capture = (TIM8_ICC1ReadValue2 - TIM8_ICC1ReadValue1);
+      } else if (TIM8_ICC1ReadValue2 < TIM8_ICC1ReadValue1) {
+        TIM8_ICC1Capture = ((0xFFFF - TIM8_ICC1ReadValue1) + TIM8_ICC1ReadValue2);
+      } else {
+        TIM8_ICC1Capture = 0;
+      }
+
+      /* Frequency computation */
+      if (TIM8_ICC1Capture) {
+        TIM8_ICC1Freq = (uint32_t) 5000000 / TIM8_ICC1Capture;
+      }
+
+      TIM8_ICC1CaptureNumber = 0;
+    }
+  }
+
+  /*Test if Input_Capture interrupt on channel 2*/
+  if (TIM_GetITStatus(TIM8, TIM_IT_CC2) == SET) {
+    /* Clear TIM8 Capture compare interrupt pending bit */
+    TIM_ClearITPendingBit(TIM8, TIM_IT_CC2);
+    if (TIM8_ICC2CaptureNumber == 0) {
+      /* Get the Input_Capture value */
+      TIM8_ICC2ReadValue1 = TIM_GetCapture2(TIM8);
+      TIM8_ICC2CaptureNumber = 1;
+    } else if (TIM8_ICC2CaptureNumber == 1) {
+      /* Get the Input_Capture value */
+      TIM8_ICC2ReadValue2 = TIM_GetCapture2(TIM8);
+
+      /* Capture computation */
+      if (TIM8_ICC2ReadValue2 > TIM8_ICC2ReadValue1) {
+        TIM8_ICC2Capture = (TIM8_ICC2ReadValue2 - TIM8_ICC2ReadValue1);
+      } else if (TIM8_ICC2ReadValue2 < TIM8_ICC2ReadValue1) {
+        TIM8_ICC2Capture = ((0xFFFF - TIM8_ICC2ReadValue1) + TIM8_ICC2ReadValue2);
+      } else {
+        TIM8_ICC2Capture = 0;
+      }
+
+      /* Frequency computation */
+      if (TIM8_ICC2Capture) {
+        TIM8_ICC2Freq = (uint32_t) SystemCoreClock / TIM8_ICC2Capture;
+      }
+
+      TIM8_ICC2CaptureNumber = 0;
+    }
+  }
+
+  /*Test if Input_Capture interrupt on channel 3*/
+  if (TIM_GetITStatus(TIM8, TIM_IT_CC3) == SET) {
+    /* Clear TIM8 Capture compare interrupt pending bit */
+    TIM_ClearITPendingBit(TIM8, TIM_IT_CC3);
+    if (TIM8_ICC3CaptureNumber == 0) {
+      /* Get the Input_Capture value */
+      TIM8_ICC3ReadValue1 = TIM_GetCapture3(TIM8);
+      TIM8_ICC3CaptureNumber = 1;
+    } else if (TIM8_ICC3CaptureNumber == 1) {
+      /* Get the Input_Capture value */
+      TIM8_ICC3ReadValue2 = TIM_GetCapture3(TIM8);
+
+      /* Capture computation */
+      if (TIM8_ICC3ReadValue2 > TIM8_ICC3ReadValue1) {
+        TIM8_ICC3Capture = (TIM8_ICC3ReadValue2 - TIM8_ICC3ReadValue1);
+      } else if (TIM8_ICC3ReadValue2 < TIM8_ICC3ReadValue1) {
+        TIM8_ICC3Capture = ((0xFFFF - TIM8_ICC3ReadValue1) + TIM8_ICC3ReadValue2);
+      } else {
+        TIM8_ICC3Capture = 0;
+      }
+
+      /* Frequency computation */
+      if (TIM8_ICC3Capture) {
+        TIM8_ICC3Freq = (uint32_t) SystemCoreClock / TIM8_ICC3Capture;
+      }
+
+      TIM8_ICC3CaptureNumber = 0;
+    }
+  }
+}
 
 /*******************************************************************************
  * Function Name  : TIM2_Configuration
@@ -793,14 +995,20 @@ void GPIOC_Configuration(void)
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOC_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOC, &GPIOC_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE);
   GPIOC_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOC_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOC_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -940,12 +1148,9 @@ void GPIOD_Configuration(void)
   RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_14;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIOD_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
   GPIO_Init(GPIOD, &GPIOD_InitStructure);
-
-  /*Alternate function configuration */
-  GPIO_PinAFConfig(GPIOD, GPIO_PinSource14, GPIO_AF_TIM4);
-  RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
   GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_15;
   GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -1392,19 +1597,28 @@ void GPIOI_Configuration(void)
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOI, GPIO_PinSource5, GPIO_AF_TIM8);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_6;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOI, GPIO_PinSource6, GPIO_AF_TIM8);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_7;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIOI_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_AF;
   GPIO_Init(GPIOI, &GPIOI_InitStructure);
+
+  /*Alternate function configuration */
+  GPIO_PinAFConfig(GPIOI, GPIO_PinSource7, GPIO_AF_TIM8);
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM8, ENABLE);
   GPIOI_InitStructure.GPIO_Pin = GPIO_Pin_8;
   GPIOI_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
   GPIOI_InitStructure.GPIO_Mode = GPIO_Mode_IN;
@@ -1459,7 +1673,7 @@ void USART6_Config(void)
 
   //USART6 clock enable
   RCC_USART6_ClockCmd();
-  USART6_InitStructure.USART_BaudRate = 921600;
+  USART6_InitStructure.USART_BaudRate = 115200;
   USART6_InitStructure.USART_WordLength = USART_WordLength_8b;
   USART6_InitStructure.USART_StopBits = USART_StopBits_1;
   USART6_InitStructure.USART_Parity = USART_Parity_No;
@@ -1893,7 +2107,7 @@ void daq_step(void)
     daq_B.GPIO_Read5 = GPIO_ReadInputData(GPIOH);
 
     /* DigitalClock: '<S2>/Digital Clock' */
-    daq_Y.time = ((daq_M->Timing.clockTick0) * 0.2);
+    daq_Y.time = ((daq_M->Timing.clockTick0) * 0.002);
 
     /* S-Function Block: <S10>/USART_Send4 */
 
@@ -2081,6 +2295,11 @@ void daq_step(void)
     GPIO_ToggleBits(GPIOD,GPIO_Pin_14);
   }
 
+  /* Update for S-Function (TIMERS_Config): '<S7>/Timers1' */
+  daq_Y.dc1 = TIM8_ICC1Capture;
+  daq_Y.dc2 = TIM8_ICC2Capture;
+  daq_Y.dc3 = TIM8_ICC3Capture;
+
   /* Update for S-Function (TIMERS_Config): '<S7>/Timers' */
 
   /* Timer frequency is an input port */
@@ -2205,7 +2424,7 @@ void daq_step(void)
 
   /* Update absolute time for base rate */
   /* The "clockTick0" counts the number of times the code of this task has
-   * been executed. The resolution of this integer timer is 0.2, which is the step size
+   * been executed. The resolution of this integer timer is 0.002, which is the step size
    * of the task. Size of "clockTick0" ensures timer will not overflow during the
    * application lifespan selected.
    */
@@ -2308,6 +2527,9 @@ void daq_initialize(void)
   NVIC_Init(&NVIC_USART3_InitStructure);
   USART_ITConfig(USART3, USART_IT_RXNE, ENABLE);
 
+  /* Start for S-Function (TIMERS_Config): '<S7>/Timers1' */
+  ;
+
   /* Start for S-Function (TIMERS_Config): '<S7>/Timers' */
   ;
 
@@ -2348,7 +2570,7 @@ void daq_initialize(void)
   /* Start for S-Function (GPIOI_Config): '<S3>/GPIOI_Config' */
   ;
 
-  /* Start for S-Function (USART_Config): '<S4>/USART_Config' */
+  /* Start for S-Function (USART_Config): '<S4>/USART_Config1' */
   ;
 
   /* Start for S-Function (USART_Config): '<S4>/USART_Config2' */
@@ -2358,6 +2580,9 @@ void daq_initialize(void)
   ;
 
   /* user code (Start function Trailer) */
+
+  /* TIM8 Configuration */
+  TIM8_Configuration();
 
   /* TIM2 Configuration */
   TIM2_Configuration();

@@ -48,10 +48,7 @@
 #include "ff.h"
 
 /* DAQ and controller loop at this rate */
-#define SAMPLE_TIME 0.002
-
-/* Uncomment for debug msg over USART port */
-#define DEBUG_MAIN
+#define SAMPLE_TIME 0.01
 
 /* this variable is used to create a time reference incremented by 1 mili-second */
 //#define SYSTEMTICK_PERIOD_MS 0.1
@@ -92,28 +89,23 @@ int16_T _pwm_pe5;
 int16_T _pwm_pe6;
 
 /* Work area (file system object) for logical drive */
-SD_Error SD_err;
-FATFS fs;
-FIL	data;							// File object 
-FIL	param;
-FRESULT	fresult;					// FatFs return code 
-FILINFO info;
-SD_Error SDstatus;
-char_T buffstr[1000];			// Line buffer 
-char_T filename[16];			// File name buffer
-char_T line[1000];				// Line buffer 
-UINT bw, strlength;
+SD_Error SD_err = SD_ERROR;
 
 /* Some vars to read encoders */
 uint16_t angleReg[4] = {0, 0, 0, 0};
 uint8_t autoGain[4] = {0, 0, 0, 0};
 uint8_t diag[4] = {0, 0, 0, 0};
 uint16_t magnitude[4] = {0, 0, 0, 0};
-double angle[4] = {0, 0, 0, 0};
-
+double angle[4] = {0, 0, 0, 0}; 
+	
 /* Some vars for vector nav measurments */
 VN100_SPI_Packet *packet;
 float yaw, pitch, roll;
+float accel[3] = {0, 0, 0};
+float rates[3] = {0, 0, 0};
+
+/* ??? */
+extern boolean_T handshakeRcvd;
 
 /* Private functions */
 void NVIC_Configuration(void);
@@ -146,8 +138,14 @@ void SysTick_Handler(void)
 	/* read encoders */
 	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	
-	/* vn100 read yaw, pitch, and roll */
+	/* vn100 read yaw, pitch, and roll [deg] */
 	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+	
+	/* read accel [m/s^2] */
+	//packet = VN100_SPI_GetAcc(0, accel);
+	
+	/* read rate gyros [rad/s] */
+	//packet = VN100_SPI_GetRates(0, rates);
 	
 	/* inpute to controller here */
 	controller_U.pid_gian[0]; // forelimb Kp 
@@ -159,39 +157,73 @@ void SysTick_Handler(void)
 	controller_U.actuator_ctrl_params[0] = 100; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
 	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
 	controller_U.actuator_ctrl_params[2] = 360; // ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
-	controller_U.actuator_ctrl_params[3] = 275; // MAX_RP_ANGLE_RIGHT [deg] 
-	controller_U.actuator_ctrl_params[4] = 205; // MAX_DV_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[5] = 225; // MIN_RP_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[6] = 145; // MIN_DV_ANGLE_RIGHT [deg]
-	controller_U.actuator_ctrl_params[7] = 110; // MAX_RP_ANGLE_LEFT [deg]
-	controller_U.actuator_ctrl_params[8] = 80; // MAX_DV_ANGLE_LEFT [deg]
-	controller_U.actuator_ctrl_params[9] = 60; // MIN_RP_ANGLE_LEFT [deg]
-	controller_U.actuator_ctrl_params[10] = 0; // MIN_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[3]; // MAX_RP_ANGLE_RIGHT [deg] 
+	controller_U.actuator_ctrl_params[4]; // MAX_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[5]; // MIN_RP_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[6]; // MIN_DV_ANGLE_RIGHT [deg]
+	controller_U.actuator_ctrl_params[7]; // MAX_RP_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[8]; // MAX_DV_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[9]; // MIN_RP_ANGLE_LEFT [deg]
+	controller_U.actuator_ctrl_params[10]; // MIN_DV_ANGLE_LEFT [deg]
 	controller_U.actuator_ctrl_params[11] = SAMPLE_TIME; // Sample interval
 	controller_U.actuator_ctrl_params[12];		// PID_TRACKING_PRECISION_THRESHOLD
 	controller_U.actuator_ctrl_params[13];		// ANTI_WINDUP_THRESHOLD
 
-	controller_U.flight_ctrl_params[0]; // ROLL_SENSITIVITY [-] -0.01
-	controller_U.flight_ctrl_params[1];  // PITCH_SENSITIVITY [-] 0.001
-	controller_U.flight_ctrl_params[2] = 0.0;  // MAX_FORELIMB_ANGLE [deg] (n.a.)
-	controller_U.flight_ctrl_params[3] = 0.0;  // MIN_FORELIMB_ANGLE [deg] (n.a.)
-	controller_U.flight_ctrl_params[4] = 0.0;  // MAX_LEG_ANGLE [deg] (n.a.)
-	controller_U.flight_ctrl_params[5] = 0.0;  // MIN_LEG_ANGLE [deg] (n.a.)
-	
+	controller_U.flight_ctrl_params[0]; // ROLL_wing_kp
+	controller_U.flight_ctrl_params[1];  // ROLL_leg_kp
+	controller_U.flight_ctrl_params[2];  // PITCH_leg_kp
+	controller_U.flight_ctrl_params[3];  // ROLL_wing_kd
+	controller_U.flight_ctrl_params[4];  // ROLL_leg_kd
+	controller_U.flight_ctrl_params[5];  // PITCH_leg_kd
 	controller_U.flight_ctrl_params[6];  // R_foreq  [deg]
 	controller_U.flight_ctrl_params[7];  // L_foreq [deg]
 	controller_U.flight_ctrl_params[8];  // R_leq [deg]
 	controller_U.flight_ctrl_params[9];  // L_leq [deg]
 	
+	
+	double desired_roll = (daq_Y.dc2 - 7700) / 3000;
+	controller_U.xd[0] = desired_roll;  // desired roll angle [deg]
+	controller_U.xd[1];  // desired pitch angle [deg]
+	
 	// IMU
-	controller_U.roll = roll;
-	controller_U.pitch = pitch;
-	controller_U.yaw = yaw;
+	if (isnan(roll))
+	{
+		controller_U.roll = 0;
+	}
+	else
+	{
+		controller_U.roll = roll;
+	}
+
+	if (isnan(pitch))
+	{
+		controller_U.pitch = 0;
+	}
+	else
+	{
+		controller_U.pitch = pitch;
+	}
+	
+	if (isnan(yaw))
+	{
+		controller_U.yaw = 0;
+	}
+	else
+	{
+		controller_U.yaw = yaw;
+	}
+	
+	controller_U.roll_rate = rates[0];
+	controller_U.pitch_rate = rates[1];
+	controller_U.yaw_rate = rates[2];
+	controller_U.accelX = accel[0];
+	controller_U.accelY = accel[1];
+	controller_U.accelZ = accel[2];
 	
 	// Encoders
 	controller_U.angle[0] = angle[0]; // Right forelimb
-	controller_U.angle[1] = angle[2]; // Left forelimb
-	controller_U.angle[2] = 0; // Right tail
+	controller_U.angle[1] = angle[3]; // Left forelimb
+	controller_U.angle[2] = angle[2]; // Right tail
 	controller_U.angle[3] = angle[1]; // Left tail 
 	
 	/* Step the controller for base rate */
@@ -204,8 +236,8 @@ void SysTick_Handler(void)
 		daq_U.pwm_pa7 = controller_Y.M0B;
 		daq_U.pwm_pb0  = controller_Y.M1A; // Left forelimb
 		_pwm_pb1  = controller_Y.M1B;
-		daq_U.pwm_pa1; // Right leg
-		daq_U.pwm_pa0;
+		daq_U.pwm_pa1  = controller_Y.M2A; // Right leg
+		daq_U.pwm_pa0  = controller_Y.M2B;
 		daq_U.pwm_pa2 = controller_Y.M3B; // Left leg
 		_pwm_pa3 = controller_Y.M3A;
 	}
@@ -222,11 +254,11 @@ void SysTick_Handler(void)
 		
 		if (motor_cmd[0] > 0) // M1
 		{
-			daq_U.pwm_pa6 = motor_cmd[0]; 
+			daq_U.pwm_pa7 = motor_cmd[0]; 
 		}
 		else
 		{
-			daq_U.pwm_pa7 = -motor_cmd[0];
+			daq_U.pwm_pa6 = -motor_cmd[0];
 		} 
 		
 		if (motor_cmd[1] > 0) // M2
@@ -267,146 +299,39 @@ void SysTick_Handler(void)
 	daq_step();
 	INTERFACE_BOARD_pwmGenerator();
 	
-#define _REC_SD_CARD
 #ifdef _REC_SD_CARD
 	if (SD_err == SD_OK)
 	{
 		/////////////////////////////// buffer data on SD card  ///////////////////////////////////
-		/* Data structure is as following */
-		// 1st col: time	2nd col: roll	3rd col: pitch	4th col: yaw	5th col: enc1	6th col: enc2	7th col: enc3	8th col:enc4	9th col: u1	10th col: u2	11th col: u3	12th col: u4
-	
-		/* find the length of the datalog file */
-		fresult = f_stat("data.txt", &info);  
- 
-		sprintf(filename, "data.txt"); 
-		fresult = f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE);
 		
-		/* If the file existed seek to the end */
-		if (fresult == FR_OK) f_lseek(&data, info.fsize);
+		/* Write flight data on SD */
+		debug_write_data();
 		
-		sprintf(buffstr,
-			"%f, %f, %f, %f, %f, %f, %f, %f \r\n",
-			controller_Y.time,
-			controller_Y.q[0],
-			controller_Y.q[1], 
-			controller_Y.q[2],
-			angle[0],
-			angle[1],
-			angle[2],
-			angle[3]);
-		fresult = f_write(&data, buffstr, strlen(buffstr), &bw);
-		
-		f_close(&data); 
-		
-		if (save_param_on_SD)
-		{
-			/* Save params as param.txt file on SD card. */ 
-			// forelimb Kp 
-			// leg Kp
-			// forelimb Kd 
-			// leg Kd
-			// forelimb Ki 
-			// leg Ki 
-			// PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
-			// MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
-			// ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
-			// MAX_RP_ANGLE_RIGHT [deg] 
-			// MAX_DV_ANGLE_RIGHT [deg]
-			// MIN_RP_ANGLE_RIGHT [deg]
-			// MIN_DV_ANGLE_RIGHT [deg]
-			// MAX_RP_ANGLE_LEFT [deg]
-			// MAX_DV_ANGLE_LEFT [deg]
-			// MIN_RP_ANGLE_LEFT [deg]
-			// MIN_DV_ANGLE_LEFT [deg]
-			// Sample interval
-			// PID_TRACKING_PRECISION_THRESHOLD
-			// ANTI_WINDUP_THRESHOLD
-			// ROLL_SENSITIVITY [-] -0.01
-			// PITCH_SENSITIVITY [-] 0.001
-			// MAX_FORELIMB_ANGLE [deg] (n.a.)
-			// MIN_FORELIMB_ANGLE [deg] (n.a.)
-			// MAX_LEG_ANGLE [deg] (n.a.)
-			// MIN_LEG_ANGLE [deg] (n.a.)
-			// R_foreq  [deg]
-			// L_foreq [deg]
-			// R_leq [deg]
-			// L_leq [deg]
-			
-			sprintf(filename, "param.txt"); 
-			/* open file on SD card */
-			while (f_open(&param, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
-				;
-	//
-			///* write the header to file */
-			//char *header = "I wrote params on SD for you :). \r\n";
-			//while (f_write(&param, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
-				//;	
-			
-			/* close file */
-			f_close(&param);
-			
-			/* Flight params are saved on SD card per request... */
-			// 1st col: .....
-	
-			/* find the length of the datalog file */
-			fresult = f_stat("param.txt", &info);  
-		
-			fresult = f_open(&param, filename, FA_OPEN_ALWAYS | FA_WRITE);
-		
-			/* If the file existed seek to the end */
-			//if (fresult == FR_OK) f_lseek(&param, info.fsize);
-			sprintf(buffstr,
-				"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f,\r\n", 
-				controller_U.pid_gian[0],
-				controller_U.pid_gian[1],
-				controller_U.pid_gian[2],
-				controller_U.pid_gian[3],
-				controller_U.pid_gian[4],
-				controller_U.pid_gian[5],
-				controller_U.actuator_ctrl_params[0],
-				controller_U.actuator_ctrl_params[1],
-				controller_U.actuator_ctrl_params[2],
-				controller_U.actuator_ctrl_params[3],
-				controller_U.actuator_ctrl_params[4],
-				controller_U.actuator_ctrl_params[5],
-				controller_U.actuator_ctrl_params[6],
-				controller_U.actuator_ctrl_params[7],
-				controller_U.actuator_ctrl_params[8],
-				controller_U.actuator_ctrl_params[9],
-				controller_U.actuator_ctrl_params[10],
-				controller_U.actuator_ctrl_params[11],
-				controller_U.actuator_ctrl_params[12],
-				controller_U.actuator_ctrl_params[13],
-				controller_U.flight_ctrl_params[0],
-				controller_U.flight_ctrl_params[1],
-				controller_U.flight_ctrl_params[2],
-				controller_U.flight_ctrl_params[3],
-				controller_U.flight_ctrl_params[4],
-				controller_U.flight_ctrl_params[5],
-				controller_U.flight_ctrl_params[6],
-				controller_U.flight_ctrl_params[7],
-				controller_U.flight_ctrl_params[8],
-				controller_U.flight_ctrl_params[9]);
-			fresult = f_write(&param, buffstr, strlen(buffstr), &bw);
-			f_close(&param); 
-			
-			// update 
-			save_param_on_SD = false;
-		}
+		/* Write control param on SD */
+		debug_write_params();		
 		
 		/////////////////////////////// buffer data on SD card  ///////////////////////////////////	
 	}
 	
 #endif
 
-#define _DEBUG
-#ifdef _DEBUG
 	/////////////////////////////// DEBUG  ///////////////////////////////////
-	
-	debug_bat_robot();
-	
+#ifdef _BLUETOOTH
+	if (!handshakeRcvd)
+	{
+		debug_check_bluetooth();
+	}
+	else
+	{
+		/* Print messages for human robot interaction */
+		debug_bat_robot();	
+	}
+#else
+    /* Print messages for human robot interaction */
+	debug_bat_robot();	
+#endif
+
 	/////////////////////////////// DEBUG  ///////////////////////////////////
-#endif 
 	
 	/* Indicate task for base rate complete */
 	OverrunFlags[0] = false;
@@ -460,85 +385,8 @@ int main (void)
 	SD_err = SD_Init(); 
 	if (SD_err == SD_OK)
 	{
-		/////////////////////////////// Make a quick header for SD log file ///////////////////////////////////
-	
-		/* Register work area to the default drive */
-		f_mount(0, &fs);
-	
-		/* Save as data.txt file on SD card. */ 
-		sprintf(filename, "data.txt"); 
-	
-		/* open file on SD card */
-		while (f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
-			;
-	
-		/* write the header to file */
-		char *header = "Hello World! This is B2 talking! I am saving data on SD card. \r\n";
-		while (f_write(&data, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
-			;	
-			
-			/* close file */
-		f_close(&data);
-	
-		/* open file on SD card */
-		char *pch;
-		float var, varVector[30];
-		uint8_T index = 0;
-		
-		/* Read param.txt file on SD card. */ 
-		sprintf(filename, "param.txt"); 
-		if (f_open(&param, filename, FA_READ) == FR_OK)
-		{
-			/* Read param line */
-			f_gets(line, sizeof line, &param);
-			pch = strtok(line, " ,");
-			while (pch != NULL)
-			{
-				sscanf(pch, "%f", &var);
-				pch = strtok(NULL, " ,");
-				varVector[index] = var;
-				index++;
-			}
-		
-			/* Write servo params */
-			for (index = 0;index < 6;index++)
-			{
-				controller_U.pid_gian[index] = varVector[index];
-			}
-			for (index = 0;index < 14;index++)
-			{
-				controller_U.actuator_ctrl_params[index] = varVector[index + 6];
-			}
-			/* Write fligth control params */
-			for (index = 0;index < 10;index++)
-			{
-				controller_U.flight_ctrl_params[index] = varVector[index + 20];
-			}
-		}
-		else
-		{
-			/* Write servo params */
-			for (index = 0;index < 6;index++)
-			{
-				controller_U.pid_gian[index] = 0;
-			}
-			for (index = 0;index < 14;index++)
-			{
-				controller_U.actuator_ctrl_params[index] = 0;
-			}
-			/* Write fligth control params */
-			for (index = 0;index < 10;index++)
-			{
-				controller_U.flight_ctrl_params[index] = 0;
-			}
-		}
-		
-		
-		
-		/* Close the file */
-		f_close(&param);
-		
-		/////////////////////////////// Make a quick header for SD log file ///////////////////////////////////	
+		/* initialize data, param, etc. files*/
+		debug_initialize_files();
 	}
 	
 	
@@ -563,10 +411,8 @@ int main (void)
 	/* Real time from systickHandler */
 	while (1) 
 	{	
-		//
 	}	
 }
-
 
 /*******************************************************************************
 * Function Name  : NVIC_Configuration
@@ -608,7 +454,6 @@ void NVIC_Configuration(void)
 * Return         : 
 * Description    : 
 *******************************************************************************/
-
 void main_delay_us(unsigned long us)
 {
 	uint16_t t0 = MAIN_TIM->CNT;
@@ -634,7 +479,6 @@ void main_delay_us(unsigned long us)
 * Return         : 
 * Description    : 
 *******************************************************************************/
-
 void main_delay_ms(unsigned long ms)
 {
 	main_delay_us(ms * 1000);
@@ -648,7 +492,6 @@ void main_delay_ms(unsigned long ms)
 * Return         : 
 * Description    : 
 *******************************************************************************/
-
 void main_initialize_us_timer()
 {
 	RCC_ClocksTypeDef RCC_Clocks;

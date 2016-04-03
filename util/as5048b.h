@@ -39,6 +39,12 @@
 #include "daq.h"
 #include "rtwtypes.h"
 
+/* Macros for bit manipulation */
+// Shifts right if y>0
+#define _BIT_FLAG 0x1
+#define _BIT_SHIFT(x,y) (y>=0 ? (x>>y) : (x<<(-y)))
+#define _READ_BIT(x,y) (_BIT_SHIFT(x,y) & _BIT_FLAG)
+
 /* Macros that used to initialize I2C for AS5048B */
 #define AS5048B_RCC_APBPeriph RCC_APB1Periph_I2C3
 #define AS5048B_RCC_AHBPeriph_GPIO RCC_AHB1Periph_GPIOH
@@ -52,6 +58,22 @@
 #define AS5048B_GPIO_Speed GPIO_Speed_25MHz
 #define AS5048B_GPIO_AF_I2Cx GPIO_AF_I2C3
 #define AS5048B_I2Cx I2C3
+
+/* Macros that used to initialize I2C for extra AS5048B */
+#define EXTRA_AS5048B_RCC_APBPeriph RCC_APB1Periph_I2C1
+#define EXTRA_AS5048B_RCC_AHBPeriph_GPIO RCC_AHB1Periph_GPIOB
+#define EXTRA_AS5048B_GPIO_Init GPIO_InitB
+#define EXTRA_AS5048B_I2C_Initx I2C_Init1
+#define EXTRA_AS5048B_GPIO GPIOB
+#define EXTRA_AS5048B_GPIO_Pin_CLK GPIO_Pin_6
+#define EXTRA_AS5048B_GPIO_Pin_SDA GPIO_Pin_7
+#define EXTRA_AS5048B_GPIO_PinSourceCLK GPIO_PinSource6
+#define EXTRA_AS5048B_GPIO_PinSourceSDA GPIO_PinSource7
+#define EXTRA_AS5048B_GPIO_Speed GPIO_Speed_2MHz
+#define EXTRA_AS5048B_GPIO_AF_I2Cx GPIO_AF_I2C1
+#define EXTRA_AS5048B_I2Cx I2C1
+
+
 //#define AS5048B_CLOCKSPEED 100000
 #define AS5048B_CLOCKSPEED 400000
 //#define AS5048B_CLOCKSPEED 3400000
@@ -112,6 +134,7 @@ extern uint8_t	_encAddressList[4];
 /* routines */
 void AS5048B_initialize_I2C(void);
 void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag, uint16_t *magnitude, double *angle);
+void EXTRA_AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag, uint16_t *magnitude, double *angle);
 void AS5048B_initialize(void);
 void AS5048B_setClockWise(boolean_T cw); 
 void AS5048B_addressRegW(uint8_t regVal); 
@@ -120,10 +143,15 @@ void AS5048B_setZeroReg(void);
 void AS5048B_zeroRegW(uint16_t regVal); 
 uint16_t AS5048B_zeroRegR(void); 
 uint16_t AS5048B_angleRegR(void); 
-uint8_t	AS5048B_getAutoGain(void); 
+uint16_t EXTRA_AS5048B_angleRegR(void); 
+uint8_t	AS5048B_getAutoGain(void);
+uint8_t	EXTRA_AS5048B_getAutoGain(void);
 uint8_t	AS5048B_getDiagReg(void); 
+uint8_t	EXTRA_AS5048B_getDiagReg(void); 
 uint16_t AS5048B_magnitudeR(void); 
+uint16_t EXTRA_AS5048B_magnitudeR(void); 
 double AS5048B_angleR(int unit, boolean_T newVal); 
+double EXTRA_AS5048B_angleR(int unit, boolean_T newVal); 
 
 
 

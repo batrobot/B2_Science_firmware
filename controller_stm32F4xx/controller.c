@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.164
+ * Model version      : 1.200
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Dec 06 06:07:25 2015
+ * C/C++ source code generated on  : Thu Mar 03 17:19:19 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -51,8 +51,8 @@ void controller_step(void)
 {
   /* local block i/o variables */
   real_T rtb_DigitalClock;
-  real_T sensitivity_matrix[16];
-  real_T sensitivity_matrix_2[16];
+  static const int8_T a[12] = { 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 };
+
   real_T u_pid[4];
   int32_T argout;
   int32_T b_argout;
@@ -62,47 +62,74 @@ void controller_step(void)
   int32_T f_argout;
   int32_T g_argout;
   int32_T h_argout;
-  static const int8_T b[16] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
-
   real_T rtb_us[8];
   real_T rtb_q[12];
-  real_T sensitivity_matrix_0[4];
-  real_T sensitivity_matrix_2_0[4];
-  real_T tmp[16];
-  real_T tmp_0[16];
-  real_T tmp_1[16];
+  real_T tmp[8];
+  real_T a_0[2];
+  real_T tmp_0[8];
+  real_T a_1[2];
+  real_T tmp_1[4];
+  real_T tmp_2[4];
+  real_T tmp_3[16];
+  real_T tmp_4[16];
+  real_T tmp_5[16];
+  real_T tmp_6[16];
   int8_T argout_0[32];
-  real_T rtb_uf;
-  real_T max_angle_idx_0;
-  real_T max_angle_idx_1;
-  real_T max_angle_idx_2;
-  real_T rtb_uf_idx_0;
-  real_T rtb_uf_idx_1;
-  real_T rtb_uf_idx_2;
-  real_T rtb_uf_idx_3;
-  real_T angle_difference_idx_0;
-  real_T angle_difference_idx_1;
-  real_T angle_difference_idx_2;
-  real_T angle_difference_idx_3;
+  real_T rtb_TSamp_idx_0;
+  real_T rtb_TSamp_idx_1;
+  real_T rtb_TSamp_idx_2;
+  real_T delta_max_angle_idx_0;
+  real_T delta_max_angle_idx_1;
+  real_T delta_max_angle_idx_2;
+  real_T delta_max_angle_idx_3;
   real_T angle_aro_idx_0;
   real_T angle_aro_idx_1;
   real_T angle_aro_idx_2;
   real_T angle_aro_idx_3;
-  real_T tmp_2;
+  real_T rtb_uf_idx_0;
+  real_T rtb_uf_idx_1;
+  real_T rtb_uf_idx_2;
+  real_T rtb_uf_idx_3;
+  real_T err_idx_0;
+  real_T err_idx_1;
+  real_T err_idx_2;
+  real_T err_idx_3;
+  real_T err_idx_0_0;
+
+  /* SampleTimeMath: '<S5>/TSamp' incorporates:
+   *  Inport: '<Root>/pitch'
+   *  Inport: '<Root>/roll'
+   *  Inport: '<Root>/yaw'
+   *
+   * About '<S5>/TSamp':
+   *  y = u * K where K = 1 / ( w * Ts )
+   */
+  rtb_TSamp_idx_0 = controller_U.roll * 500.0;
+  rtb_TSamp_idx_1 = controller_U.pitch * 500.0;
+  rtb_TSamp_idx_2 = controller_U.yaw * 500.0;
 
   /* MATLAB Function: '<S4>/func_state_estimator' incorporates:
    *  Inport: '<Root>/pitch'
    *  Inport: '<Root>/roll'
    *  Inport: '<Root>/yaw'
-   *  SignalConversion: '<S8>/TmpSignal ConversionAt SFunction Inport1'
+   *  SignalConversion: '<S6>/TmpSignal ConversionAt SFunction Inport1'
+   *  Sum: '<S5>/Diff'
+   *  UnitDelay: '<S5>/UD'
    */
-  /* MATLAB Function 'state estimator/func_state_estimator': '<S8>:1' */
+  /* MATLAB Function 'state estimator/func_state_estimator': '<S6>:1' */
   /*  state estimator */
   /*  u: imu measurments  */
-  /*     imu_roll [rad] */
-  /*     imu_pitch */
-  /*     imu_yaw */
-  /*  du: imu measurments @ (t+1) - imu measurments @ (t) */
+  /*     roll [deg] */
+  /*     pitch */
+  /*     yaw */
+  /*  du: imu measurments, rate angles */
+  /*     roll rate [rad/sec] */
+  /*     pitch rate */
+  /*     yaw rate */
+  /*  accel: imu measurments, accelerations */
+  /*     accel X [m/s^2] */
+  /*     accel Y */
+  /*     accel Z */
   /*  q: estimated state  */
   /*    qr: vehicle roll [rad] */
   /*    qp: vehicle pitch */
@@ -117,37 +144,65 @@ void controller_step(void)
   /*    dpy: vehicle y-vel */
   /*    dpz: vehicle z-vel */
   /*  NOTE: IMU is installed such that: */
-  /*        x-axis is towards left arm wing (pitch) */
-  /*        y-axis is towards head (roll) */
+  /*        x-axis is towards right arm wing (pitch) */
+  /*        y-axis is towards tail (roll) */
   /*        z-axis is downwards (yaw) */
   /*  By Alireza Ramezani, 9-5-2015, Champaign, IL */
-  /* '<S8>:1:27' q = zeros(12,1); */
-  /* '<S8>:1:28' DEG2RAD = pi/180; */
+  /* '<S6>:1:34' q = zeros(12,1); */
+  /* '<S6>:1:35' DEG2RAD = pi/180; */
   /*  rad\deg */
-  /* '<S8>:1:30' q = DEG2RAD*q; */
-  memset(&rtb_q[0], 0, 12U * sizeof(real_T));
-
   /*  roll */
-  /* '<S8>:1:33' q(1) = u(2); */
-  rtb_q[0] = controller_U.pitch;
+  /* '<S6>:1:38' q(1) = DEG2RAD*u(2); */
+  rtb_q[0] = 0.017453292519943295 * controller_U.pitch;
 
   /*  pitch */
-  /* '<S8>:1:36' q(2) = u(1); */
-  rtb_q[1] = controller_U.roll;
+  /* '<S6>:1:41' q(2) = DEG2RAD*u(1); */
+  rtb_q[1] = 0.017453292519943295 * controller_U.roll;
 
   /*  yaw  */
-  /* '<S8>:1:39' q(3) = u(3); */
-  rtb_q[2] = controller_U.yaw;
+  /* '<S6>:1:44' q(3) = DEG2RAD*u(3); */
+  rtb_q[2] = 0.017453292519943295 * controller_U.yaw;
+
+  /*  px */
+  /* '<S6>:1:47' q(4) = 0; */
+  rtb_q[3] = 0.0;
+
+  /*  py */
+  /* '<S6>:1:50' q(5) = 0; */
+  rtb_q[4] = 0.0;
+
+  /*  pz */
+  /* '<S6>:1:53' q(6) = 0; */
+  rtb_q[5] = 0.0;
+
+  /*  roll rate */
+  /* '<S6>:1:56' q(7) = DEG2RAD*du(2); */
+  rtb_q[6] = (rtb_TSamp_idx_1 - controller_DW.UD_DSTATE[1]) *
+    0.017453292519943295;
+
+  /*  pitch rate */
+  /* '<S6>:1:59' q(8) = DEG2RAD*du(1); */
+  rtb_q[7] = (rtb_TSamp_idx_0 - controller_DW.UD_DSTATE[0]) *
+    0.017453292519943295;
+
+  /*  yaw rate  */
+  /* '<S6>:1:62' q(9) = DEG2RAD*du(3); */
+  rtb_q[8] = (rtb_TSamp_idx_2 - controller_DW.UD_DSTATE[2]) *
+    0.017453292519943295;
+
+  /*  vx */
+  /* '<S6>:1:65' q(10) = 0; */
+  rtb_q[9] = 0.0;
+
+  /*  vy */
+  /* '<S6>:1:68' q(11) = 0; */
+  rtb_q[10] = 0.0;
+
+  /*  vz */
+  /* '<S6>:1:71' q(12) = 0; */
+  rtb_q[11] = 0.0;
 
   /* Outport: '<Root>/q' */
-  /*  % roll rate */
-  /*  q(7) = du(2); */
-  /*   */
-  /*  % pitch rate */
-  /*  q(8) = du(1); */
-  /*   */
-  /*  % yaw rate */
-  /*  q(9) = du(3); */
   memcpy(&controller_Y.q[0], &rtb_q[0], 12U * sizeof(real_T));
 
   /* InitialCondition: '<Root>/IC' incorporates:
@@ -164,10 +219,7 @@ void controller_step(void)
   /* End of InitialCondition: '<Root>/IC' */
 
   /* MATLAB Function: '<Root>/func_flight_controller' incorporates:
-   *  Inport: '<Root>/pitch'
-   *  Inport: '<Root>/roll'
-   *  MATLAB Function: '<S4>/func_state_estimator'
-   *  SignalConversion: '<S8>/TmpSignal ConversionAt SFunction Inport1'
+   *  Inport: '<Root>/xd'
    */
   /* MATLAB Function 'func_flight_controller': '<S3>:1' */
   /*  func_flight_controller */
@@ -184,7 +236,9 @@ void controller_step(void)
   /*    dpx: x-vel [m/s] */
   /*    dpy: y-vel [m/s] */
   /*    dpz: z-vel [m/s] */
-  /*  */
+  /*  xd: desired values [rad] */
+  /*    qr: roll */
+  /*    qp: pitch */
   /*  flight_ctrl_params: controller params, e.g.,  */
   /*    flight_ctrl_params(1): Roll sensitivity */
   /*    flight_ctrl_params(2): Pitch sensitivity */
@@ -204,87 +258,97 @@ void controller_step(void)
   /*    uf(4): Left leg DV angle */
   /*   */
   /*  By Alireza Ramezani, 9-5-2015, Champaign, IL */
-  /* '<S3>:1:37' uf = zeros(4,1); */
-  /* '<S3>:1:39' DEG2RAD = pi/180; */
+  /* '<S3>:1:39' uf = zeros(4,1); */
+  /* '<S3>:1:41' DEG2RAD = pi/180; */
   /*  rad\deg */
-  /* '<S3>:1:41' ROLL_SENSITIVITY = flight_ctrl_params(1); */
-  /* '<S3>:1:42' PITCH_SENSITIVITY = flight_ctrl_params(2); */
-  /* '<S3>:1:43' MAX_FORELIMB_ANGLE = flight_ctrl_params(3); */
-  /* '<S3>:1:44' MIN_FORELIMB_ANGLE = flight_ctrl_params(4); */
-  /* '<S3>:1:45' MAX_LEG_ANGLE = flight_ctrl_params(5); */
-  /* '<S3>:1:46' MIN_LEG_ANGLE = flight_ctrl_params(6); */
-  /* '<S3>:1:47' R_foreq = flight_ctrl_params(7); */
-  /* '<S3>:1:48' L_foreq = flight_ctrl_params(8); */
-  /* '<S3>:1:49' R_leq = flight_ctrl_params(9); */
-  /* '<S3>:1:50' L_leq = flight_ctrl_params(10); */
-  /*  equilibrium */
-  /* '<S3>:1:53' eq = DEG2RAD*[R_foreq,L_foreq,R_leq,L_leq].'; */
-  /*  limits */
-  /* '<S3>:1:56' max_angle = DEG2RAD*[MAX_FORELIMB_ANGLE,MAX_FORELIMB_ANGLE,MAX_LEG_ANGLE,MAX_LEG_ANGLE].'; */
-  /* '<S3>:1:57' min_angle = DEG2RAD*[MIN_FORELIMB_ANGLE,MIN_FORELIMB_ANGLE,MIN_LEG_ANGLE,MIN_LEG_ANGLE].'; */
+  /* '<S3>:1:43' ROLL_wing_kp = flight_ctrl_params(1); */
+  /* '<S3>:1:44' ROLL_leg_kp = flight_ctrl_params(2); */
+  /* '<S3>:1:45' PITCH_leg_kp = flight_ctrl_params(3); */
+  /* '<S3>:1:46' ROLL_wing_kd = flight_ctrl_params(4); */
+  /* '<S3>:1:47' ROLL_leg_kd = flight_ctrl_params(5); */
+  /* '<S3>:1:48' PITCH_leg_kd = flight_ctrl_params(6); */
+  /* '<S3>:1:49' R_foreq = flight_ctrl_params(7); */
+  /* '<S3>:1:50' L_foreq = flight_ctrl_params(8); */
+  /* '<S3>:1:51' R_leq = flight_ctrl_params(9); */
+  /* '<S3>:1:52' L_leq = flight_ctrl_params(10); */
+  /*  feed-forward */
+  /* '<S3>:1:55' fwd = DEG2RAD*[R_foreq,L_foreq,R_leq,L_leq].'; */
   /*  comptue control */
-  /* '<S3>:1:60' sensitivity_matrix = diag([ROLL_SENSITIVITY,ROLL_SENSITIVITY,PITCH_SENSITIVITY,-PITCH_SENSITIVITY]); */
-  for (argout = 0; argout < 16; argout++) {
-    sensitivity_matrix[argout] = 0.0;
-    sensitivity_matrix_2[argout] = 0.0;
+  /* '<S3>:1:59' x = q(1:6); */
+  /* '<S3>:1:60' dx = q(7:end); */
+  /* '<S3>:1:62' kp = [ROLL_wing_kp,0;... */
+  /* '<S3>:1:63'      -ROLL_wing_kp,0;... */
+  /* '<S3>:1:64'       ROLL_leg_kp,PITCH_leg_kp;... */
+  /* '<S3>:1:65'       ROLL_leg_kp,-PITCH_leg_kp]; */
+  /* '<S3>:1:67' kd = [ROLL_wing_kd,0;... */
+  /* '<S3>:1:68'      -ROLL_wing_kd,0;... */
+  /* '<S3>:1:69'       ROLL_leg_kd,PITCH_leg_kd;... */
+  /* '<S3>:1:70'       ROLL_leg_kd,-PITCH_leg_kd]; */
+  /* '<S3>:1:72' H = [1,0,0,0,0,0;... */
+  /* '<S3>:1:73'      0,1,0,0,0,0]; */
+  /* '<S3>:1:75' y = H*x-xd; */
+  /* '<S3>:1:77' dy = H*dx; */
+  /* '<S3>:1:79' uf = -kp*y -kd*dy + fwd; */
+  rtb_us[0] = controller_DW.IC[0];
+  rtb_us[4] = 0.0;
+  rtb_us[1] = -controller_DW.IC[0];
+  rtb_us[5] = 0.0;
+  rtb_us[2] = controller_DW.IC[1];
+  rtb_us[6] = controller_DW.IC[2];
+  rtb_us[3] = controller_DW.IC[1];
+  rtb_us[7] = -controller_DW.IC[2];
+  for (argout = 0; argout < 2; argout++) {
+    tmp[argout << 2] = -rtb_us[argout << 2];
+    tmp[1 + (argout << 2)] = -rtb_us[(argout << 2) + 1];
+    tmp[2 + (argout << 2)] = -rtb_us[(argout << 2) + 2];
+    tmp[3 + (argout << 2)] = -rtb_us[(argout << 2) + 3];
   }
 
-  sensitivity_matrix[0] = controller_DW.IC[0];
-  sensitivity_matrix[5] = controller_DW.IC[0];
-  sensitivity_matrix[10] = controller_DW.IC[1];
-  sensitivity_matrix[15] = -controller_DW.IC[1];
+  for (argout = 0; argout < 2; argout++) {
+    delta_max_angle_idx_3 = 0.0;
+    for (b_argout = 0; b_argout < 6; b_argout++) {
+      delta_max_angle_idx_3 += (real_T)a[(b_argout << 1) + argout] *
+        rtb_q[b_argout];
+    }
 
-  /*  just added this for tail control experiments, this way tail is going to */
-  /*  respond to roll motions */
-  /* '<S3>:1:64' sensitivity_matrix_2 = diag([ROLL_SENSITIVITY,ROLL_SENSITIVITY,ROLL_SENSITIVITY,ROLL_SENSITIVITY]); */
-  sensitivity_matrix_2[0] = controller_DW.IC[0];
-  sensitivity_matrix_2[5] = controller_DW.IC[0];
-  sensitivity_matrix_2[10] = controller_DW.IC[0];
-  sensitivity_matrix_2[15] = controller_DW.IC[0];
+    a_0[argout] = delta_max_angle_idx_3 - controller_U.xd[argout];
+  }
 
-  /*  roll */
-  /*  pitch */
-  /*  angle = [q(1),q(1),q(2),q(2)].'; */
-  /* '<S3>:1:72' angle = [q(1),q(1),q(2),q(2)].'; */
-  /* '<S3>:1:73' angle_2 = [q(1),q(1),q(1),q(1)].'; */
-  /* '<S3>:1:74' uf = sensitivity_matrix*angle + sensitivity_matrix_2*angle_2 + eq; */
+  tmp_0[0] = controller_DW.IC[3];
+  tmp_0[4] = 0.0;
+  tmp_0[1] = -controller_DW.IC[3];
+  tmp_0[5] = 0.0;
+  tmp_0[2] = controller_DW.IC[4];
+  tmp_0[6] = controller_DW.IC[5];
+  tmp_0[3] = controller_DW.IC[4];
+  tmp_0[7] = -controller_DW.IC[5];
+  for (argout = 0; argout < 2; argout++) {
+    a_1[argout] = 0.0;
+    for (b_argout = 0; b_argout < 6; b_argout++) {
+      a_1[argout] += (real_T)a[(b_argout << 1) + argout] * rtb_q[6 + b_argout];
+    }
+  }
+
   for (argout = 0; argout < 4; argout++) {
-    angle_difference_idx_0 = sensitivity_matrix[argout + 12] * controller_U.roll
-      + (sensitivity_matrix[argout + 8] * controller_U.roll +
-         (sensitivity_matrix[argout + 4] * controller_U.pitch +
-          sensitivity_matrix[argout] * controller_U.pitch));
-    sensitivity_matrix_0[argout] = angle_difference_idx_0;
+    tmp_1[argout] = tmp[argout + 4] * a_0[1] + tmp[argout] * a_0[0];
   }
 
   for (argout = 0; argout < 4; argout++) {
-    angle_difference_idx_0 = sensitivity_matrix_2[argout + 12] *
-      controller_U.pitch + (sensitivity_matrix_2[argout + 8] *
-      controller_U.pitch + (sensitivity_matrix_2[argout + 4] *
-      controller_U.pitch + sensitivity_matrix_2[argout] * controller_U.pitch));
-    sensitivity_matrix_2_0[argout] = angle_difference_idx_0;
+    tmp_2[argout] = tmp_0[argout + 4] * a_1[1] + tmp_0[argout] * a_1[0];
   }
 
-  rtb_uf_idx_0 = (sensitivity_matrix_0[0] + sensitivity_matrix_2_0[0]) +
-    0.017453292519943295 * controller_DW.IC[6];
-  rtb_uf_idx_1 = (sensitivity_matrix_0[1] + sensitivity_matrix_2_0[1]) +
-    0.017453292519943295 * controller_DW.IC[7];
-  rtb_uf_idx_2 = (sensitivity_matrix_0[2] + sensitivity_matrix_2_0[2]) +
-    0.017453292519943295 * controller_DW.IC[8];
-  rtb_uf_idx_3 = (sensitivity_matrix_0[3] + sensitivity_matrix_2_0[3]) +
-    0.017453292519943295 * controller_DW.IC[9];
+  rtb_uf_idx_0 = (tmp_1[0] - tmp_2[0]) + 0.017453292519943295 *
+    controller_DW.IC[6];
+  rtb_uf_idx_1 = (tmp_1[1] - tmp_2[1]) + 0.017453292519943295 *
+    controller_DW.IC[7];
+  rtb_uf_idx_2 = (tmp_1[2] - tmp_2[2]) + 0.017453292519943295 *
+    controller_DW.IC[8];
+  rtb_uf_idx_3 = (tmp_1[3] - tmp_2[3]) + 0.017453292519943295 *
+    controller_DW.IC[9];
 
   /* End of MATLAB Function: '<Root>/func_flight_controller' */
 
   /* Outport: '<Root>/flight_ctrl' */
-  /*  limit control effort */
-  /*  for i=1:4 */
-  /*      if(uf(i)>max_angle(i)) */
-  /*          uf(i) = max_angle(i); */
-  /*      end */
-  /*      if(uf(i)<min_angle(i)) */
-  /*          uf(i) = min_angle(i); */
-  /*      end */
-  /*  end */
   controller_Y.flight_ctrl[0] = rtb_uf_idx_0;
   controller_Y.flight_ctrl[1] = rtb_uf_idx_1;
   controller_Y.flight_ctrl[2] = rtb_uf_idx_2;
@@ -307,8 +371,6 @@ void controller_step(void)
   /* MATLAB Function: '<Root>/func_actuator_controller' incorporates:
    *  Inport: '<Root>/angle'
    *  Inport: '<Root>/pid_gian'
-   *  UnitDelay: '<Root>/Unit Delay'
-   *  UnitDelay: '<Root>/Unit Delay1'
    *  UnitDelay: '<Root>/Unit Delay2'
    */
   /* MATLAB Function 'func_actuator_controller': '<S2>:1' */
@@ -394,51 +456,52 @@ void controller_step(void)
   /* '<S2>:1:79' err2mem = zeros(4,1); */
   /* '<S2>:1:80' debug = zeros(4,1); */
   /*  global vars */
-  /* '<S2>:1:99' PID_SATURATION_THRESHOLD = ctrl_param(1); */
+  /* '<S2>:1:100' PID_SATURATION_THRESHOLD = ctrl_param(1); */
   controller_DW.PID_SATURATION_THRESHOLD = controller_DW.IC2[0];
 
-  /* '<S2>:1:100' MAX_ANGLE_DIFFERENCE = ctrl_param(2); */
+  /* '<S2>:1:101' MAX_ANGLE_DIFFERENCE = ctrl_param(2); */
   controller_DW.MAX_ANGLE_DIFFERENCE = controller_DW.IC2[1];
 
-  /* '<S2>:1:101' ANTI_ROLLOVER_CORRECTION = ctrl_param(3); */
+  /* '<S2>:1:102' ANTI_ROLLOVER_CORRECTION = ctrl_param(3); */
   controller_DW.ANTI_ROLLOVER_CORRECTION = controller_DW.IC2[2];
 
-  /* '<S2>:1:102' MAX_RP_ANGLE_RIGHT = ctrl_param(4); */
+  /* '<S2>:1:103' MAX_RP_ANGLE_RIGHT = ctrl_param(4); */
   controller_DW.MAX_RP_ANGLE_RIGHT = controller_DW.IC2[3];
 
-  /* '<S2>:1:103' MAX_DV_ANGLE_RIGHT = ctrl_param(5); */
+  /* '<S2>:1:104' MAX_DV_ANGLE_RIGHT = ctrl_param(5); */
   controller_DW.MAX_DV_ANGLE_RIGHT = controller_DW.IC2[4];
 
-  /* '<S2>:1:104' MIN_RP_ANGLE_RIGHT = ctrl_param(6); */
+  /* '<S2>:1:105' MIN_RP_ANGLE_RIGHT = ctrl_param(6); */
   controller_DW.MIN_RP_ANGLE_RIGHT = controller_DW.IC2[5];
 
-  /* '<S2>:1:105' MIN_DV_ANGLE_RIGHT = ctrl_param(7); */
+  /* '<S2>:1:106' MIN_DV_ANGLE_RIGHT = ctrl_param(7); */
   controller_DW.MIN_DV_ANGLE_RIGHT = controller_DW.IC2[6];
 
-  /* '<S2>:1:106' MAX_RP_ANGLE_LEFT = ctrl_param(8); */
+  /* '<S2>:1:107' MAX_RP_ANGLE_LEFT = ctrl_param(8); */
   controller_DW.MAX_RP_ANGLE_LEFT = controller_DW.IC2[7];
 
-  /* '<S2>:1:107' MAX_DV_ANGLE_LEFT = ctrl_param(9); */
+  /* '<S2>:1:108' MAX_DV_ANGLE_LEFT = ctrl_param(9); */
   controller_DW.MAX_DV_ANGLE_LEFT = controller_DW.IC2[8];
 
-  /* '<S2>:1:108' MIN_RP_ANGLE_LEFT = ctrl_param(10); */
+  /* '<S2>:1:109' MIN_RP_ANGLE_LEFT = ctrl_param(10); */
   controller_DW.MIN_RP_ANGLE_LEFT = controller_DW.IC2[9];
 
-  /* '<S2>:1:109' MIN_DV_ANGLE_LEFT = ctrl_param(11); */
+  /* '<S2>:1:110' MIN_DV_ANGLE_LEFT = ctrl_param(11); */
   controller_DW.MIN_DV_ANGLE_LEFT = controller_DW.IC2[10];
 
-  /* '<S2>:1:110' SAMPLING_INTERVAL = ctrl_param(12); */
+  /* '<S2>:1:111' SAMPLING_INTERVAL = ctrl_param(12); */
   controller_DW.SAMPLING_INTERVAL = controller_DW.IC2[11];
 
-  /* '<S2>:1:111' PID_TRACKING_PRECISION_THRESHOLD = ctrl_param(13); */
+  /* '<S2>:1:112' PID_TRACKING_PRECISION_THRESHOLD = ctrl_param(13); */
   controller_DW.PID_TRACKING_PRECISION_THRESHOL = controller_DW.IC2[12];
 
-  /* '<S2>:1:112' ANTI_WINDUP_THRESHOLD = ctrl_param(14); */
+  /* '<S2>:1:113' ANTI_WINDUP_THRESHOLD = ctrl_param(14); */
   controller_DW.ANTI_WINDUP_THRESHOLD = controller_DW.IC2[13];
 
   /*  angle preprocessing */
   /*  NOTE: output is rad. */
-  /* '<S2>:1:116' angle_aro = func_anti_rollOver(angle,angle_prev); */
+  /* '<S2>:1:117' angle_aro = func_anti_rollOver(angle,angle_prev); */
+  /*  angle_difference = zeros(4,1); */
   /*  func_anti_rollOver: prevent roll-over in as5048B (it rolles over at 360 deg) */
   /*  angle: encoder measurments, in deg, measurements are not filters, 4-by-1 */
   /*  vecot */
@@ -458,7 +521,6 @@ void controller_step(void)
   /*    angle_aro(3): right leg */
   /*    angle_aro(4): left leg */
   /*  by ALireza Ramezani, 8-31-2015, Champaign, IL */
-  /* 'func_anti_rollOver:22' angle_difference = zeros(4,1); */
   /* 'func_anti_rollOver:23' angle_aro = zeros(4,1); */
   /*  guess max angular changes during one sample time */
   /* 'func_anti_rollOver:38' DEG2RAD = pi/180; */
@@ -470,15 +532,6 @@ void controller_step(void)
   /*  ANTI_ROLLOVER_THRESHOLD = ANTI_ROLLOVER_CORRECTION - MAX_ANGLE_DIFFERENCE; % deg */
   /*  comptue the difference */
   /* 'func_anti_rollOver:49' angle_difference = angle - angle_prev; */
-  angle_difference_idx_0 = controller_U.angle[0] -
-    controller_DW.UnitDelay_DSTATE[0];
-  angle_difference_idx_1 = controller_U.angle[1] -
-    controller_DW.UnitDelay_DSTATE[1];
-  angle_difference_idx_2 = controller_U.angle[2] -
-    controller_DW.UnitDelay_DSTATE[2];
-  angle_difference_idx_3 = controller_U.angle[3] -
-    controller_DW.UnitDelay_DSTATE[3];
-
   /*  for i=1:4 */
   /*      if (angle_difference(i) > -ANTI_ROLLOVER_THRESHOLD)||(angle_difference(i) < ANTI_ROLLOVER_THRESHOLD) */
   /*          if(angle_difference(i)<0) */
@@ -488,132 +541,39 @@ void controller_step(void)
   /*          end */
   /*      end */
   /*  end */
-  /* 'func_anti_rollOver:63' for i=1:4 */
-  /* 'func_anti_rollOver:64' if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE) */
-  if ((angle_difference_idx_0 > controller_DW.MAX_ANGLE_DIFFERENCE) ||
-      (angle_difference_idx_0 < -controller_DW.MAX_ANGLE_DIFFERENCE)) {
-    /* 'func_anti_rollOver:65' if(angle_difference(i)<0) */
-    if (angle_difference_idx_0 < 0.0) {
-      /* 'func_anti_rollOver:66' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1; */
-      controller_DW.ROLLOVER_FLAG[0]++;
-    } else {
-      /* 'func_anti_rollOver:67' else */
-      /* 'func_anti_rollOver:68' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1; */
-      controller_DW.ROLLOVER_FLAG[0]--;
-    }
-  }
-
-  /* 'func_anti_rollOver:64' if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE) */
-  if ((angle_difference_idx_1 > controller_DW.MAX_ANGLE_DIFFERENCE) ||
-      (angle_difference_idx_1 < -controller_DW.MAX_ANGLE_DIFFERENCE)) {
-    /* 'func_anti_rollOver:65' if(angle_difference(i)<0) */
-    if (angle_difference_idx_1 < 0.0) {
-      /* 'func_anti_rollOver:66' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1; */
-      controller_DW.ROLLOVER_FLAG[1]++;
-    } else {
-      /* 'func_anti_rollOver:67' else */
-      /* 'func_anti_rollOver:68' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1; */
-      controller_DW.ROLLOVER_FLAG[1]--;
-    }
-  }
-
-  /* 'func_anti_rollOver:64' if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE) */
-  if ((angle_difference_idx_2 > controller_DW.MAX_ANGLE_DIFFERENCE) ||
-      (angle_difference_idx_2 < -controller_DW.MAX_ANGLE_DIFFERENCE)) {
-    /* 'func_anti_rollOver:65' if(angle_difference(i)<0) */
-    if (angle_difference_idx_2 < 0.0) {
-      /* 'func_anti_rollOver:66' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1; */
-      controller_DW.ROLLOVER_FLAG[2]++;
-    } else {
-      /* 'func_anti_rollOver:67' else */
-      /* 'func_anti_rollOver:68' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1; */
-      controller_DW.ROLLOVER_FLAG[2]--;
-    }
-  }
-
-  /* 'func_anti_rollOver:64' if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE) */
-  if ((angle_difference_idx_3 > controller_DW.MAX_ANGLE_DIFFERENCE) ||
-      (angle_difference_idx_3 < -controller_DW.MAX_ANGLE_DIFFERENCE)) {
-    /* 'func_anti_rollOver:65' if(angle_difference(i)<0) */
-    if (angle_difference_idx_3 < 0.0) {
-      /* 'func_anti_rollOver:66' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1; */
-      controller_DW.ROLLOVER_FLAG[3]++;
-    } else {
-      /* 'func_anti_rollOver:67' else */
-      /* 'func_anti_rollOver:68' ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1; */
-      controller_DW.ROLLOVER_FLAG[3]--;
-    }
-  }
-
-  /* 'func_anti_rollOver:73' angle_aro = angle + ANTI_ROLLOVER_CORRECTION_MATRIX*ROLLOVER_FLAG; */
+  /*  for i=1:4 */
+  /*      if (angle_difference(i) > MAX_ANGLE_DIFFERENCE)||(angle_difference(i) < -MAX_ANGLE_DIFFERENCE) */
+  /*          if(angle_difference(i)<0) */
+  /*              ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) + 1; */
+  /*          else */
+  /*              ROLLOVER_FLAG(i) = ROLLOVER_FLAG(i) - 1; */
+  /*          end */
+  /*      end */
+  /*  end */
+  /*   */
+  /*  angle_aro = angle + ANTI_ROLLOVER_CORRECTION_MATRIX*ROLLOVER_FLAG; */
   /*  convert angles to radian */
   /* 'func_anti_rollOver:77' angle_aro = DEG2RAD*angle_aro; */
   /*  calibration materials */
-  /* 'func_anti_rollOver:80' max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].'; */
+  /*  max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].'; */
   /* 'func_anti_rollOver:81' min_angle = DEG2RAD*[MIN_RP_ANGLE_RIGHT,MIN_RP_ANGLE_LEFT,MIN_DV_ANGLE_RIGHT,MIN_DV_ANGLE_LEFT].'; */
-  /* 'func_anti_rollOver:82' delta_angle_matrix = diag(max_angle-min_angle); */
+  /*  delta_angle_matrix = diag(max_angle-min_angle); */
   /*  calibrate angles */
   /* 'func_anti_rollOver:85' angle_aro = angle_aro-min_angle; */
-  for (argout = 0; argout < 4; argout++) {
-    sensitivity_matrix_0[argout] = ((((real_T)b[argout + 4] *
-      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[1] +
-      controller_DW.ANTI_ROLLOVER_CORRECTION * (real_T)b[argout] *
-      controller_DW.ROLLOVER_FLAG[0]) + (real_T)b[argout + 8] *
-      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[2]) +
-                                    (real_T)b[argout + 12] *
-      controller_DW.ANTI_ROLLOVER_CORRECTION * controller_DW.ROLLOVER_FLAG[3]) +
-      controller_U.angle[argout];
-  }
-
-  angle_aro_idx_0 = 0.017453292519943295 * sensitivity_matrix_0[0] -
+  angle_aro_idx_0 = 0.017453292519943295 * controller_U.angle[0] -
     0.017453292519943295 * controller_DW.MIN_RP_ANGLE_RIGHT;
-  angle_aro_idx_1 = 0.017453292519943295 * sensitivity_matrix_0[1] -
+  angle_aro_idx_1 = 0.017453292519943295 * controller_U.angle[1] -
     0.017453292519943295 * controller_DW.MIN_RP_ANGLE_LEFT;
-  angle_aro_idx_2 = 0.017453292519943295 * sensitivity_matrix_0[2] -
+  angle_aro_idx_2 = 0.017453292519943295 * controller_U.angle[2] -
     0.017453292519943295 * controller_DW.MIN_DV_ANGLE_RIGHT;
-  angle_aro_idx_3 = 0.017453292519943295 * sensitivity_matrix_0[3] -
+  angle_aro_idx_3 = 0.017453292519943295 * controller_U.angle[3] -
     0.017453292519943295 * controller_DW.MIN_DV_ANGLE_LEFT;
 
   /*  filtering */
-  /* '<S2>:1:119' angle_f = func_lowpass_filter(angle_aro,angle_aro_prev); */
-  /*  func_lowpass_filter: this is a simple moving average filter(n: window size) */
-  /*  angle: 4-by-1 vec */
-  /*    angle(1): right forelimb */
-  /*    angle(2): left forelimb */
-  /*    angle(3): right leg */
-  /*    angle(4): left leg */
-  /*  angle_prev: from n-previous sample times, a 4-by-n vector */
-  /*    angle_prev(1,i): right forelimb @ time(i) */
-  /*    angle_prev(2,i): left forelimb  @ time(i) */
-  /*    angle_prev(3,i): right leg @ time(i) */
-  /*    angle_prev(4,i): left leg @ time(i) */
-  /*  angle_f: filtered data, 4-by-1 vec */
-  /*    angle_f(1): right forelimb */
-  /*    angle_f(2): left forelimb */
-  /*    angle_f(3): right leg */
-  /*    angle_f(4): left leg */
-  /*  by ALireza Ramezani, 8-31-2015, Champaign, IL */
-  /* 'func_lowpass_filter:20' angle_f = zeros(4,1); */
-  /* 'func_lowpass_filter:21' angle_sum = zeros(4,1); */
-  /*  find the length of moving ave window */
-  /* 'func_lowpass_filter:24' [~,n] = size(angle_prev); */
-  /* 'func_lowpass_filter:24' ~ */
-  /* 'func_lowpass_filter:26' for i=1:n */
-  /* 'func_lowpass_filter:27' angle_sum = angle_sum + angle_prev(:,i); */
-  /* 'func_lowpass_filter:30' angle_sum = angle_sum + angle; */
-  /* 'func_lowpass_filter:32' angle_f = angle_sum/(n+1); */
-  angle_difference_idx_0 = (controller_DW.UnitDelay1_DSTATE[0] + angle_aro_idx_0)
-    / 2.0;
-  angle_difference_idx_1 = (controller_DW.UnitDelay1_DSTATE[1] + angle_aro_idx_1)
-    / 2.0;
-  angle_difference_idx_2 = (controller_DW.UnitDelay1_DSTATE[2] + angle_aro_idx_2)
-    / 2.0;
-  angle_difference_idx_3 = (controller_DW.UnitDelay1_DSTATE[3] + angle_aro_idx_3)
-    / 2.0;
-
-  /*  end of code */
+  /*  angle_f = func_lowpass_filter(angle_aro,angle_aro_prev); */
+  /* '<S2>:1:121' angle_f = angle_aro; */
   /*  PID scheme */
-  /* '<S2>:1:122' [u_pid,err] = func_pid_controller(angle_f,uf,prev_err,pid_gain); */
+  /* '<S2>:1:124' [u_pid,err] = func_pid_controller(angle_f,uf,prev_err,pid_gain); */
   /*  func_pid_controller: pd position controller */
   /*  angle: 4-by-1 vec */
   /*    angle(1): right forelimb */
@@ -652,212 +612,230 @@ void controller_step(void)
   /* 'func_pid_controller:36' serr = zeros(4,1); */
   /*  integration of err */
   /*  global vars */
-  /* 'func_pid_controller:51' Kp = [gain(1),0,0,0;... */
-  /* 'func_pid_controller:52'       0, gain(1),0,0;... */
-  /* 'func_pid_controller:53'       0, 0,gain(2),0;... */
-  /* 'func_pid_controller:54'       0, 0, 0,gain(2)]; */
-  /* 'func_pid_controller:56' Kd = [gain(3),0,0,0;... */
-  /* 'func_pid_controller:57'       0, gain(3),0,0;... */
-  /* 'func_pid_controller:58'       0, 0,gain(4),0;... */
-  /* 'func_pid_controller:59'       0, 0, 0,gain(4)]; */
-  /* 'func_pid_controller:61' Ki = [gain(5),0,0,0;... */
-  /* 'func_pid_controller:62'       0, gain(5),0,0;... */
-  /* 'func_pid_controller:63'       0, 0,gain(6),0;... */
-  /* 'func_pid_controller:64'       0, 0, 0,gain(6)]; */
+  /* 'func_pid_controller:52' Kp = [gain(1),0,0,0;... */
+  /* 'func_pid_controller:53'       0, gain(1),0,0;... */
+  /* 'func_pid_controller:54'       0, 0,gain(2),0;... */
+  /* 'func_pid_controller:55'       0, 0, 0,gain(2)]; */
+  /* 'func_pid_controller:57' Kd = [gain(3),0,0,0;... */
+  /* 'func_pid_controller:58'       0, gain(3),0,0;... */
+  /* 'func_pid_controller:59'       0, 0,gain(4),0;... */
+  /* 'func_pid_controller:60'       0, 0, 0,gain(4)]; */
+  /* 'func_pid_controller:62' Ki = [gain(5),0,0,0;... */
+  /* 'func_pid_controller:63'       0, gain(5),0,0;... */
+  /* 'func_pid_controller:64'       0, 0,gain(6),0;... */
+  /* 'func_pid_controller:65'       0, 0, 0,gain(6)]; */
   /*  compute error and derr */
-  /* 'func_pid_controller:67' err = angle - des_angle; */
-  rtb_uf_idx_0 = angle_difference_idx_0 - rtb_uf_idx_0;
-  rtb_uf_idx_1 = angle_difference_idx_1 - rtb_uf_idx_1;
-  rtb_uf_idx_2 = angle_difference_idx_2 - rtb_uf_idx_2;
-  rtb_uf = angle_difference_idx_3 - rtb_uf_idx_3;
+  /* 'func_pid_controller:68' err = angle - des_angle; */
+  err_idx_0 = angle_aro_idx_0 - rtb_uf_idx_0;
+  err_idx_1 = angle_aro_idx_1 - rtb_uf_idx_1;
+  err_idx_2 = angle_aro_idx_2 - rtb_uf_idx_2;
+  err_idx_3 = angle_aro_idx_3 - rtb_uf_idx_3;
 
-  /* 'func_pid_controller:68' derr = (err-prev_err)/SAMPLING_INTERVAL; */
-  /* 'func_pid_controller:69' ERR_INTEGRALE = ERR_INTEGRALE + err; */
-  controller_DW.ERR_INTEGRALE[0] += rtb_uf_idx_0;
-  controller_DW.ERR_INTEGRALE[1] += rtb_uf_idx_1;
-  controller_DW.ERR_INTEGRALE[2] += rtb_uf_idx_2;
-  controller_DW.ERR_INTEGRALE[3] += rtb_uf;
+  /* 'func_pid_controller:69' derr = (err-prev_err)/SAMPLING_INTERVAL; */
+  /* 'func_pid_controller:70' ERR_INTEGRALE = ERR_INTEGRALE + err; */
+  controller_DW.ERR_INTEGRALE[0] += err_idx_0;
+  controller_DW.ERR_INTEGRALE[1] += err_idx_1;
+  controller_DW.ERR_INTEGRALE[2] += err_idx_2;
+  controller_DW.ERR_INTEGRALE[3] += err_idx_3;
 
-  /* 'func_pid_controller:71' for i=1:4 */
-  /* 'func_pid_controller:72' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:72' for i=1:4 */
+  /* 'func_pid_controller:73' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[0] > controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:73' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:74' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[0] = controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:75' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:76' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[0] < -controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:76' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:77' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[0] = -controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:72' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:73' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[1] > controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:73' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:74' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[1] = controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:75' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:76' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[1] < -controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:76' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:77' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[1] = -controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:72' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:73' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[2] > controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:73' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:74' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[2] = controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:75' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:76' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[2] < -controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:76' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:77' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[2] = -controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:72' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:73' if ERR_INTEGRALE(i)>ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[3] > controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:73' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:74' ERR_INTEGRALE(i) = ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[3] = controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
-  /* 'func_pid_controller:75' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
+  /* 'func_pid_controller:76' if ERR_INTEGRALE(i)<-ANTI_WINDUP_THRESHOLD */
   if (controller_DW.ERR_INTEGRALE[3] < -controller_DW.ANTI_WINDUP_THRESHOLD) {
-    /* 'func_pid_controller:76' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
+    /* 'func_pid_controller:77' ERR_INTEGRALE(i) = -ANTI_WINDUP_THRESHOLD; */
     controller_DW.ERR_INTEGRALE[3] = -controller_DW.ANTI_WINDUP_THRESHOLD;
   }
 
   /*  computer u */
-  /* 'func_pid_controller:80' u = -Kp*err -Kd*derr -Ki*ERR_INTEGRALE; */
-  tmp[0] = controller_U.pid_gian[0];
-  tmp[4] = 0.0;
-  tmp[8] = 0.0;
-  tmp[12] = 0.0;
-  tmp[1] = 0.0;
-  tmp[5] = controller_U.pid_gian[0];
-  tmp[9] = 0.0;
-  tmp[13] = 0.0;
-  tmp[2] = 0.0;
-  tmp[6] = 0.0;
-  tmp[10] = controller_U.pid_gian[1];
-  tmp[14] = 0.0;
-  tmp[3] = 0.0;
-  tmp[7] = 0.0;
-  tmp[11] = 0.0;
-  tmp[15] = controller_U.pid_gian[1];
+  /* 'func_pid_controller:81' u = -Kp*err -Kd*derr -Ki*ERR_INTEGRALE; */
+  tmp_3[0] = controller_U.pid_gian[0];
+  tmp_3[4] = 0.0;
+  tmp_3[8] = 0.0;
+  tmp_3[12] = 0.0;
+  tmp_3[1] = 0.0;
+  tmp_3[5] = controller_U.pid_gian[0];
+  tmp_3[9] = 0.0;
+  tmp_3[13] = 0.0;
+  tmp_3[2] = 0.0;
+  tmp_3[6] = 0.0;
+  tmp_3[10] = controller_U.pid_gian[1];
+  tmp_3[14] = 0.0;
+  tmp_3[3] = 0.0;
+  tmp_3[7] = 0.0;
+  tmp_3[11] = 0.0;
+  tmp_3[15] = controller_U.pid_gian[1];
   for (argout = 0; argout < 4; argout++) {
-    sensitivity_matrix[argout << 2] = -tmp[argout << 2];
-    sensitivity_matrix[1 + (argout << 2)] = -tmp[(argout << 2) + 1];
-    sensitivity_matrix[2 + (argout << 2)] = -tmp[(argout << 2) + 2];
-    sensitivity_matrix[3 + (argout << 2)] = -tmp[(argout << 2) + 3];
+    tmp_4[argout << 2] = -tmp_3[argout << 2];
+    tmp_4[1 + (argout << 2)] = -tmp_3[(argout << 2) + 1];
+    tmp_4[2 + (argout << 2)] = -tmp_3[(argout << 2) + 2];
+    tmp_4[3 + (argout << 2)] = -tmp_3[(argout << 2) + 3];
   }
 
-  tmp_0[0] = controller_U.pid_gian[2];
-  tmp_0[4] = 0.0;
-  tmp_0[8] = 0.0;
-  tmp_0[12] = 0.0;
-  tmp_0[1] = 0.0;
-  tmp_0[5] = controller_U.pid_gian[2];
-  tmp_0[9] = 0.0;
-  tmp_0[13] = 0.0;
-  tmp_0[2] = 0.0;
-  tmp_0[6] = 0.0;
-  tmp_0[10] = controller_U.pid_gian[3];
-  tmp_0[14] = 0.0;
-  tmp_0[3] = 0.0;
-  tmp_0[7] = 0.0;
-  tmp_0[11] = 0.0;
-  tmp_0[15] = controller_U.pid_gian[3];
-  max_angle_idx_2 = (rtb_uf_idx_0 - controller_DW.UnitDelay2_DSTATE[0]) /
+  tmp_5[0] = controller_U.pid_gian[2];
+  tmp_5[4] = 0.0;
+  tmp_5[8] = 0.0;
+  tmp_5[12] = 0.0;
+  tmp_5[1] = 0.0;
+  tmp_5[5] = controller_U.pid_gian[2];
+  tmp_5[9] = 0.0;
+  tmp_5[13] = 0.0;
+  tmp_5[2] = 0.0;
+  tmp_5[6] = 0.0;
+  tmp_5[10] = controller_U.pid_gian[3];
+  tmp_5[14] = 0.0;
+  tmp_5[3] = 0.0;
+  tmp_5[7] = 0.0;
+  tmp_5[11] = 0.0;
+  tmp_5[15] = controller_U.pid_gian[3];
+  err_idx_0_0 = (err_idx_0 - controller_DW.UnitDelay2_DSTATE[0]) /
     controller_DW.SAMPLING_INTERVAL;
-  max_angle_idx_1 = (rtb_uf_idx_1 - controller_DW.UnitDelay2_DSTATE[1]) /
+  delta_max_angle_idx_0 = (err_idx_1 - controller_DW.UnitDelay2_DSTATE[1]) /
     controller_DW.SAMPLING_INTERVAL;
-  max_angle_idx_0 = (rtb_uf_idx_2 - controller_DW.UnitDelay2_DSTATE[2]) /
+  delta_max_angle_idx_1 = (err_idx_2 - controller_DW.UnitDelay2_DSTATE[2]) /
     controller_DW.SAMPLING_INTERVAL;
-  rtb_uf_idx_3 = (rtb_uf - controller_DW.UnitDelay2_DSTATE[3]) /
+  delta_max_angle_idx_2 = (err_idx_3 - controller_DW.UnitDelay2_DSTATE[3]) /
     controller_DW.SAMPLING_INTERVAL;
   for (argout = 0; argout < 4; argout++) {
-    tmp_2 = sensitivity_matrix[argout + 12] * rtb_uf +
-      (sensitivity_matrix[argout + 8] * rtb_uf_idx_2 +
-       (sensitivity_matrix[argout + 4] * rtb_uf_idx_1 +
-        sensitivity_matrix[argout] * rtb_uf_idx_0));
-    sensitivity_matrix_0[argout] = tmp_2;
+    delta_max_angle_idx_3 = tmp_4[argout + 12] * err_idx_3 + (tmp_4[argout + 8] *
+      err_idx_2 + (tmp_4[argout + 4] * err_idx_1 + tmp_4[argout] * err_idx_0));
+    tmp_1[argout] = delta_max_angle_idx_3;
   }
 
   for (argout = 0; argout < 4; argout++) {
-    tmp_2 = tmp_0[argout + 12] * rtb_uf_idx_3 + (tmp_0[argout + 8] *
-      max_angle_idx_0 + (tmp_0[argout + 4] * max_angle_idx_1 + tmp_0[argout] *
-                         max_angle_idx_2));
-    sensitivity_matrix_2_0[argout] = tmp_2;
+    delta_max_angle_idx_3 = tmp_5[argout + 12] * delta_max_angle_idx_2 +
+      (tmp_5[argout + 8] * delta_max_angle_idx_1 + (tmp_5[argout + 4] *
+        delta_max_angle_idx_0 + tmp_5[argout] * err_idx_0_0));
+    tmp_2[argout] = delta_max_angle_idx_3;
   }
 
-  tmp_1[0] = controller_U.pid_gian[4];
-  tmp_1[4] = 0.0;
-  tmp_1[8] = 0.0;
-  tmp_1[12] = 0.0;
-  tmp_1[1] = 0.0;
-  tmp_1[5] = controller_U.pid_gian[4];
-  tmp_1[9] = 0.0;
-  tmp_1[13] = 0.0;
-  tmp_1[2] = 0.0;
-  tmp_1[6] = 0.0;
-  tmp_1[10] = controller_U.pid_gian[5];
-  tmp_1[14] = 0.0;
-  tmp_1[3] = 0.0;
-  tmp_1[7] = 0.0;
-  tmp_1[11] = 0.0;
-  tmp_1[15] = controller_U.pid_gian[5];
+  tmp_6[0] = controller_U.pid_gian[4];
+  tmp_6[4] = 0.0;
+  tmp_6[8] = 0.0;
+  tmp_6[12] = 0.0;
+  tmp_6[1] = 0.0;
+  tmp_6[5] = controller_U.pid_gian[4];
+  tmp_6[9] = 0.0;
+  tmp_6[13] = 0.0;
+  tmp_6[2] = 0.0;
+  tmp_6[6] = 0.0;
+  tmp_6[10] = controller_U.pid_gian[5];
+  tmp_6[14] = 0.0;
+  tmp_6[3] = 0.0;
+  tmp_6[7] = 0.0;
+  tmp_6[11] = 0.0;
+  tmp_6[15] = controller_U.pid_gian[5];
   for (argout = 0; argout < 4; argout++) {
-    u_pid[argout] = (sensitivity_matrix_0[argout] -
-                     sensitivity_matrix_2_0[argout]) - (((tmp_1[argout + 4] *
-      controller_DW.ERR_INTEGRALE[1] + tmp_1[argout] *
-      controller_DW.ERR_INTEGRALE[0]) + tmp_1[argout + 8] *
-      controller_DW.ERR_INTEGRALE[2]) + tmp_1[argout + 12] *
+    u_pid[argout] = (tmp_1[argout] - tmp_2[argout]) - (((tmp_6[argout + 4] *
+      controller_DW.ERR_INTEGRALE[1] + tmp_6[argout] *
+      controller_DW.ERR_INTEGRALE[0]) + tmp_6[argout + 8] *
+      controller_DW.ERR_INTEGRALE[2]) + tmp_6[argout + 12] *
       controller_DW.ERR_INTEGRALE[3]);
   }
 
   /*  turn-off the controller immediately when hit the limits */
-  /* 'func_pid_controller:83' DEG2RAD = pi/180; */
+  /* 'func_pid_controller:84' DEG2RAD = pi/180; */
   /*  rad\deg */
-  /* 'func_pid_controller:84' max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].'; */
-  /* 'func_pid_controller:85' min_angle = DEG2RAD*[MIN_RP_ANGLE_RIGHT,MIN_RP_ANGLE_LEFT,MIN_DV_ANGLE_RIGHT,MIN_DV_ANGLE_LEFT].'; */
-  /* 'func_pid_controller:86' delta_max_angle = max_angle-min_angle; */
-  /* 'func_pid_controller:87' for i=1:4 */
-  /* 'func_pid_controller:88' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
-  if ((angle_difference_idx_0 > 0.017453292519943295 *
-       controller_DW.MAX_RP_ANGLE_RIGHT - 0.017453292519943295 *
-       controller_DW.MIN_RP_ANGLE_RIGHT) || (angle_difference_idx_0 < 0.0)) {
-    /* 'func_pid_controller:89' u(i) = 0; */
+  /* 'func_pid_controller:85' max_angle = DEG2RAD*[MAX_RP_ANGLE_RIGHT,MAX_RP_ANGLE_LEFT,MAX_DV_ANGLE_RIGHT,MAX_DV_ANGLE_LEFT].'; */
+  /* 'func_pid_controller:86' min_angle = DEG2RAD*[MIN_RP_ANGLE_RIGHT,MIN_RP_ANGLE_LEFT,MIN_DV_ANGLE_RIGHT,MIN_DV_ANGLE_LEFT].'; */
+  /* 'func_pid_controller:87' delta_max_angle = max_angle-min_angle; */
+  delta_max_angle_idx_0 = 0.017453292519943295 *
+    controller_DW.MAX_RP_ANGLE_RIGHT - 0.017453292519943295 *
+    controller_DW.MIN_RP_ANGLE_RIGHT;
+  delta_max_angle_idx_1 = 0.017453292519943295 * controller_DW.MAX_RP_ANGLE_LEFT
+    - 0.017453292519943295 * controller_DW.MIN_RP_ANGLE_LEFT;
+  delta_max_angle_idx_2 = 0.017453292519943295 *
+    controller_DW.MAX_DV_ANGLE_RIGHT - 0.017453292519943295 *
+    controller_DW.MIN_DV_ANGLE_RIGHT;
+  delta_max_angle_idx_3 = 0.017453292519943295 * controller_DW.MAX_DV_ANGLE_LEFT
+    - 0.017453292519943295 * controller_DW.MIN_DV_ANGLE_LEFT;
+
+  /* 'func_pid_controller:88' for i=1:4 */
+  /* 'func_pid_controller:89' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
+  if (((angle_aro_idx_0 > delta_max_angle_idx_0) || (angle_aro_idx_0 < 0.0)) &&
+      ((rtb_uf_idx_0 < 0.0) || (rtb_uf_idx_0 > delta_max_angle_idx_0))) {
+    /* 'func_pid_controller:90' if (des_angle(i) < 0 || des_angle(i) > delta_max_angle(i)) */
+    /* 'func_pid_controller:91' u(i) = 0; */
     u_pid[0] = 0.0;
   }
 
-  /* 'func_pid_controller:88' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
-  if ((angle_difference_idx_1 > 0.017453292519943295 *
-       controller_DW.MAX_RP_ANGLE_LEFT - 0.017453292519943295 *
-       controller_DW.MIN_RP_ANGLE_LEFT) || (angle_difference_idx_1 < 0.0)) {
-    /* 'func_pid_controller:89' u(i) = 0; */
+  /* 'func_pid_controller:89' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
+  if (((angle_aro_idx_1 > delta_max_angle_idx_1) || (angle_aro_idx_1 < 0.0)) &&
+      ((rtb_uf_idx_1 < 0.0) || (rtb_uf_idx_1 > delta_max_angle_idx_1))) {
+    /* 'func_pid_controller:90' if (des_angle(i) < 0 || des_angle(i) > delta_max_angle(i)) */
+    /* 'func_pid_controller:91' u(i) = 0; */
     u_pid[1] = 0.0;
   }
 
-  /* 'func_pid_controller:88' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
-  if ((angle_difference_idx_2 > 0.017453292519943295 *
-       controller_DW.MAX_DV_ANGLE_RIGHT - 0.017453292519943295 *
-       controller_DW.MIN_DV_ANGLE_RIGHT) || (angle_difference_idx_2 < 0.0)) {
-    /* 'func_pid_controller:89' u(i) = 0; */
+  /* 'func_pid_controller:89' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
+  if (((angle_aro_idx_2 > delta_max_angle_idx_2) || (angle_aro_idx_2 < 0.0)) &&
+      ((rtb_uf_idx_2 < 0.0) || (rtb_uf_idx_2 > delta_max_angle_idx_2))) {
+    /* 'func_pid_controller:90' if (des_angle(i) < 0 || des_angle(i) > delta_max_angle(i)) */
+    /* 'func_pid_controller:91' u(i) = 0; */
     u_pid[2] = 0.0;
   }
 
-  /* 'func_pid_controller:88' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
-  if ((angle_difference_idx_3 > 0.017453292519943295 *
-       controller_DW.MAX_DV_ANGLE_LEFT - 0.017453292519943295 *
-       controller_DW.MIN_DV_ANGLE_LEFT) || (angle_difference_idx_3 < 0.0)) {
-    /* 'func_pid_controller:89' u(i) = 0; */
+  /* 'func_pid_controller:89' if((angle(i)>delta_max_angle(i))||(angle(i)<0)) */
+  if (((angle_aro_idx_3 > delta_max_angle_idx_3) || (angle_aro_idx_3 < 0.0)) &&
+      ((rtb_uf_idx_3 < 0.0) || (rtb_uf_idx_3 > delta_max_angle_idx_3))) {
+    /* 'func_pid_controller:90' if (des_angle(i) < 0 || des_angle(i) > delta_max_angle(i)) */
+    /* 'func_pid_controller:91' u(i) = 0; */
     u_pid[3] = 0.0;
   }
 
+  /*  for i=1:4 */
+  /*      if(des_angle(i) > 0 && des_angle(i) < delta_max_angle(i)) */
+  /*          LOCK_MOTORS(i) = false; */
+  /*      end */
+  /*  end */
+  /*  for i=1:4 */
+  /*      if(LOCK_MOTORS(i)) */
+  /*          u(i) = 0; */
+  /*      end */
+  /*  end */
   /*  map pid efforts to drv (leg actuators are dc motors and armwing actuators */
   /*  previously were dc motors) */
-  /* '<S2>:1:126' us = func_map_pid_to_servo(u_pid,err); */
+  /* '<S2>:1:128' us = func_map_pid_to_servo(u_pid,err); */
   /*  func_map_pid_to_servo: map controller input to drv8835 commands */
   /*  u: control action, 4-by-1 vec */
   /*    u(1): right forelimb */
@@ -985,98 +963,96 @@ void controller_step(void)
   /*  end of code */
   /*  saturate u */
   /* 'func_map_pid_to_servo:39' for i=1:4 */
-  angle_difference_idx_3 = u_pid[0];
+  rtb_uf_idx_3 = u_pid[0];
 
   /* 'func_map_pid_to_servo:40' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[0] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:41' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_servo:44' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (rtb_uf_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:45' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  angle_difference_idx_0 = angle_difference_idx_3;
-
-  /* MATLAB Function: '<Root>/func_actuator_controller' */
-  angle_difference_idx_3 = u_pid[1];
+  rtb_uf_idx_0 = rtb_uf_idx_3;
+  rtb_uf_idx_3 = u_pid[1];
 
   /* 'func_map_pid_to_servo:40' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[1] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:41' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_servo:44' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (rtb_uf_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:45' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  angle_difference_idx_1 = angle_difference_idx_3;
-  angle_difference_idx_3 = u_pid[2];
+  rtb_uf_idx_1 = rtb_uf_idx_3;
+  rtb_uf_idx_3 = u_pid[2];
 
   /* 'func_map_pid_to_servo:40' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[2] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:41' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_servo:44' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (rtb_uf_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:45' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  angle_difference_idx_2 = angle_difference_idx_3;
-  angle_difference_idx_3 = u_pid[3];
+  rtb_uf_idx_2 = rtb_uf_idx_3;
+  rtb_uf_idx_3 = u_pid[3];
 
   /* 'func_map_pid_to_servo:40' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[3] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:41' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_servo:44' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (rtb_uf_idx_3 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_servo:45' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
+    rtb_uf_idx_3 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /*  if position err is too small: set ctrl effort to zero */
   /* 'func_map_pid_to_servo:51' for i=1:4 */
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
-  if (fabs(rtb_uf_idx_0) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
+  if (fabs(err_idx_0) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
-    angle_difference_idx_0 = 0.0;
+    rtb_uf_idx_0 = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
-  if (fabs(rtb_uf_idx_1) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
+  if (fabs(err_idx_1) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
-    angle_difference_idx_1 = 0.0;
+    rtb_uf_idx_1 = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
-  if (fabs(rtb_uf_idx_2) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
+  if (fabs(err_idx_2) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
-    angle_difference_idx_2 = 0.0;
+    rtb_uf_idx_2 = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
-  if (fabs(rtb_uf) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
+  if (fabs(err_idx_3) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
-    angle_difference_idx_3 = 0.0;
+    rtb_uf_idx_3 = 0.0;
   }
 
   /* 'func_map_pid_to_servo:58' u_drv = H*abs(u); */
-  max_angle_idx_0 = fabs(angle_difference_idx_0);
-  max_angle_idx_1 = fabs(angle_difference_idx_1);
-  max_angle_idx_2 = fabs(angle_difference_idx_2);
-  angle_difference_idx_0 = fabs(angle_difference_idx_3);
+  delta_max_angle_idx_0 = fabs(rtb_uf_idx_0);
+  delta_max_angle_idx_1 = fabs(rtb_uf_idx_1);
+  delta_max_angle_idx_2 = fabs(rtb_uf_idx_2);
+  delta_max_angle_idx_3 = fabs(rtb_uf_idx_3);
 
   /*  end of code */
   argout_0[0] = (int8_T)argout;
@@ -1112,15 +1088,15 @@ void controller_step(void)
   argout_0[23] = 0;
   argout_0[31] = (int8_T)h_argout;
   for (argout = 0; argout < 8; argout++) {
-    rtb_uf_idx_3 = (real_T)argout_0[argout + 24] * angle_difference_idx_0 +
-      ((real_T)argout_0[argout + 16] * max_angle_idx_2 + ((real_T)
-        argout_0[argout + 8] * max_angle_idx_1 + (real_T)argout_0[argout] *
-        max_angle_idx_0));
-    rtb_us[argout] = rtb_uf_idx_3;
+    err_idx_0_0 = (real_T)argout_0[argout + 24] * delta_max_angle_idx_3 +
+      ((real_T)argout_0[argout + 16] * delta_max_angle_idx_2 + ((real_T)
+        argout_0[argout + 8] * delta_max_angle_idx_1 + (real_T)argout_0[argout] *
+        delta_max_angle_idx_0));
+    rtb_us[argout] = err_idx_0_0;
   }
 
   /*  map pid effort to tm320 (now, armwing actuators are bldc) */
-  /* '<S2>:1:129' ubldc = func_map_pid_to_tms320(u_pid); */
+  /* '<S2>:1:131' ubldc = func_map_pid_to_tms320(u_pid); */
   /*  func_map_pid_to_servo: map controller input to tms320 commands */
   /*  u: control action, 4-by-1 vec */
   /*    u(1): right forelimb */
@@ -1149,63 +1125,63 @@ void controller_step(void)
   /*  used for saturating control command to tms320 */
   /*  saturate u */
   /* 'func_map_pid_to_tms320:30' for i=1:4 */
-  angle_difference_idx_0 = u_pid[0];
+  err_idx_0_0 = u_pid[0];
 
   /* 'func_map_pid_to_tms320:31' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[0] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:32' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_tms320:35' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (err_idx_0_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:36' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = -controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  u_pid[0] = angle_difference_idx_0;
-  angle_difference_idx_0 = u_pid[1];
+  u_pid[0] = err_idx_0_0;
+  err_idx_0_0 = u_pid[1];
 
   /* 'func_map_pid_to_tms320:31' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[1] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:32' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_tms320:35' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (err_idx_0_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:36' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = -controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  u_pid[1] = angle_difference_idx_0;
-  angle_difference_idx_0 = u_pid[2];
+  u_pid[1] = err_idx_0_0;
+  err_idx_0_0 = u_pid[2];
 
   /* 'func_map_pid_to_tms320:31' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[2] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:32' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_tms320:35' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (err_idx_0_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:36' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = -controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
-  u_pid[2] = angle_difference_idx_0;
-  angle_difference_idx_0 = u_pid[3];
+  u_pid[2] = err_idx_0_0;
+  err_idx_0_0 = u_pid[3];
 
   /* 'func_map_pid_to_tms320:31' if u(i)> PID_SATURATION_THRESHOLD */
   if (u_pid[3] > controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:32' u(i) = PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_tms320:35' if u(i)< -PID_SATURATION_THRESHOLD */
-  if (angle_difference_idx_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
+  if (err_idx_0_0 < -controller_DW.PID_SATURATION_THRESHOLD) {
     /* 'func_map_pid_to_tms320:36' u(i) = -PID_SATURATION_THRESHOLD; */
-    angle_difference_idx_0 = -controller_DW.PID_SATURATION_THRESHOLD;
+    err_idx_0_0 = -controller_DW.PID_SATURATION_THRESHOLD;
   }
 
   /* 'func_map_pid_to_tms320:40' u_tms = u + s; */
@@ -1214,63 +1190,63 @@ void controller_step(void)
   u_pid[2] += 50.0;
 
   /* 'func_map_pid_to_tms320:42' for i=1:4 */
-  rtb_uf_idx_3 = u_pid[0];
+  delta_max_angle_idx_0 = u_pid[0];
 
   /* 'func_map_pid_to_tms320:43' if u_tms(i)> PWM_MAX_DC */
   if (u_pid[0] > 98.0) {
     /* 'func_map_pid_to_tms320:44' u_tms(i) = PWM_MAX_DC; */
-    rtb_uf_idx_3 = 98.0;
+    delta_max_angle_idx_0 = 98.0;
   }
 
   /* 'func_map_pid_to_tms320:47' if u_tms(i)< PWM_MIN_DC */
-  if (rtb_uf_idx_3 < 2.0) {
+  if (delta_max_angle_idx_0 < 2.0) {
     /* 'func_map_pid_to_tms320:48' u_tms(i) = PWM_MIN_DC; */
-    rtb_uf_idx_3 = 2.0;
+    delta_max_angle_idx_0 = 2.0;
   }
 
-  u_pid[0] = rtb_uf_idx_3;
-  rtb_uf_idx_3 = u_pid[1];
+  u_pid[0] = delta_max_angle_idx_0;
+  delta_max_angle_idx_0 = u_pid[1];
 
   /* 'func_map_pid_to_tms320:43' if u_tms(i)> PWM_MAX_DC */
   if (u_pid[1] > 98.0) {
     /* 'func_map_pid_to_tms320:44' u_tms(i) = PWM_MAX_DC; */
-    rtb_uf_idx_3 = 98.0;
+    delta_max_angle_idx_0 = 98.0;
   }
 
   /* 'func_map_pid_to_tms320:47' if u_tms(i)< PWM_MIN_DC */
-  if (rtb_uf_idx_3 < 2.0) {
+  if (delta_max_angle_idx_0 < 2.0) {
     /* 'func_map_pid_to_tms320:48' u_tms(i) = PWM_MIN_DC; */
-    rtb_uf_idx_3 = 2.0;
+    delta_max_angle_idx_0 = 2.0;
   }
 
-  u_pid[1] = rtb_uf_idx_3;
-  rtb_uf_idx_3 = u_pid[2];
+  u_pid[1] = delta_max_angle_idx_0;
+  delta_max_angle_idx_0 = u_pid[2];
 
   /* 'func_map_pid_to_tms320:43' if u_tms(i)> PWM_MAX_DC */
   if (u_pid[2] > 98.0) {
     /* 'func_map_pid_to_tms320:44' u_tms(i) = PWM_MAX_DC; */
-    rtb_uf_idx_3 = 98.0;
+    delta_max_angle_idx_0 = 98.0;
   }
 
   /* 'func_map_pid_to_tms320:47' if u_tms(i)< PWM_MIN_DC */
-  if (rtb_uf_idx_3 < 2.0) {
+  if (delta_max_angle_idx_0 < 2.0) {
     /* 'func_map_pid_to_tms320:48' u_tms(i) = PWM_MIN_DC; */
-    rtb_uf_idx_3 = 2.0;
+    delta_max_angle_idx_0 = 2.0;
   }
 
-  u_pid[2] = rtb_uf_idx_3;
-  rtb_uf_idx_3 = angle_difference_idx_0 + 50.0;
+  u_pid[2] = delta_max_angle_idx_0;
+  delta_max_angle_idx_0 = err_idx_0_0 + 50.0;
 
   /* 'func_map_pid_to_tms320:43' if u_tms(i)> PWM_MAX_DC */
-  if (angle_difference_idx_0 + 50.0 > 98.0) {
+  if (err_idx_0_0 + 50.0 > 98.0) {
     /* 'func_map_pid_to_tms320:44' u_tms(i) = PWM_MAX_DC; */
-    rtb_uf_idx_3 = 98.0;
+    delta_max_angle_idx_0 = 98.0;
   }
 
   /* 'func_map_pid_to_tms320:47' if u_tms(i)< PWM_MIN_DC */
-  if (rtb_uf_idx_3 < 2.0) {
+  if (delta_max_angle_idx_0 < 2.0) {
     /* 'func_map_pid_to_tms320:48' u_tms(i) = PWM_MIN_DC; */
-    rtb_uf_idx_3 = 2.0;
+    delta_max_angle_idx_0 = 2.0;
   }
 
   /* Outport: '<Root>/ubldc' incorporates:
@@ -1280,36 +1256,28 @@ void controller_step(void)
   controller_Y.ubldc[0] = u_pid[0];
   controller_Y.ubldc[1] = u_pid[1];
   controller_Y.ubldc[2] = u_pid[2];
-  controller_Y.ubldc[3] = rtb_uf_idx_3;
-
-  /* Update for UnitDelay: '<Root>/Unit Delay1' incorporates:
-   *  MATLAB Function: '<Root>/func_actuator_controller'
-   */
-  /*  some update for memory */
-  /* '<S2>:1:132' angle2mem = angle; */
-  /* '<S2>:1:133' angle_aro2mem = angle_aro; */
-  controller_DW.UnitDelay1_DSTATE[0] = angle_aro_idx_0;
-  controller_DW.UnitDelay1_DSTATE[1] = angle_aro_idx_1;
-  controller_DW.UnitDelay1_DSTATE[2] = angle_aro_idx_2;
-  controller_DW.UnitDelay1_DSTATE[3] = angle_aro_idx_3;
+  controller_Y.ubldc[3] = delta_max_angle_idx_0;
 
   /* Update for UnitDelay: '<Root>/Unit Delay2' incorporates:
    *  MATLAB Function: '<Root>/func_actuator_controller'
    */
-  /* '<S2>:1:134' err2mem = err; */
-  controller_DW.UnitDelay2_DSTATE[0] = rtb_uf_idx_0;
-  controller_DW.UnitDelay2_DSTATE[1] = rtb_uf_idx_1;
-  controller_DW.UnitDelay2_DSTATE[2] = rtb_uf_idx_2;
-  controller_DW.UnitDelay2_DSTATE[3] = rtb_uf;
+  /*  some update for memory */
+  /* '<S2>:1:134' angle2mem = angle; */
+  /* '<S2>:1:135' angle_aro2mem = angle_aro; */
+  /* '<S2>:1:136' err2mem = err; */
+  controller_DW.UnitDelay2_DSTATE[0] = err_idx_0;
+  controller_DW.UnitDelay2_DSTATE[1] = err_idx_1;
+  controller_DW.UnitDelay2_DSTATE[2] = err_idx_2;
+  controller_DW.UnitDelay2_DSTATE[3] = err_idx_3;
 
   /* Outport: '<Root>/debug' incorporates:
    *  MATLAB Function: '<Root>/func_actuator_controller'
    */
-  /* '<S2>:1:135' debug = ERR_INTEGRALE; */
-  controller_Y.debug[0] = controller_DW.ERR_INTEGRALE[0];
-  controller_Y.debug[1] = controller_DW.ERR_INTEGRALE[1];
-  controller_Y.debug[2] = controller_DW.ERR_INTEGRALE[2];
-  controller_Y.debug[3] = controller_DW.ERR_INTEGRALE[3];
+  /* '<S2>:1:137' debug = angle_f; */
+  controller_Y.debug[0] = angle_aro_idx_0;
+  controller_Y.debug[1] = angle_aro_idx_1;
+  controller_Y.debug[2] = angle_aro_idx_2;
+  controller_Y.debug[3] = angle_aro_idx_3;
 
   /* Outport: '<Root>/M0A' */
   /*  end of code */
@@ -1337,7 +1305,7 @@ void controller_step(void)
   controller_Y.M3B = rtb_us[7];
 
   /* DigitalClock: '<Root>/Digital Clock' */
-  rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.01);
+  rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.002);
 
   /* MATLAB Function: '<Root>/fcn_timer' */
   /* MATLAB Function 'fcn_timer': '<S1>:1' */
@@ -1360,18 +1328,14 @@ void controller_step(void)
   /* '<S1>:1:13' tout = tin; */
   controller_Y.time = rtb_DigitalClock;
 
-  /* Update for UnitDelay: '<Root>/Unit Delay' incorporates:
-   *  Inport: '<Root>/angle'
-   *  MATLAB Function: '<Root>/func_actuator_controller'
-   */
-  controller_DW.UnitDelay_DSTATE[0] = controller_U.angle[0];
-  controller_DW.UnitDelay_DSTATE[1] = controller_U.angle[1];
-  controller_DW.UnitDelay_DSTATE[2] = controller_U.angle[2];
-  controller_DW.UnitDelay_DSTATE[3] = controller_U.angle[3];
+  /* Update for UnitDelay: '<S5>/UD' */
+  controller_DW.UD_DSTATE[0] = rtb_TSamp_idx_0;
+  controller_DW.UD_DSTATE[1] = rtb_TSamp_idx_1;
+  controller_DW.UD_DSTATE[2] = rtb_TSamp_idx_2;
 
   /* Update absolute time for base rate */
   /* The "clockTick0" counts the number of times the code of this task has
-   * been executed. The resolution of this integer timer is 0.01, which is the step size
+   * been executed. The resolution of this integer timer is 0.002, which is the step size
    * of the task. Size of "clockTick0" ensures timer will not overflow during the
    * application lifespan selected.
    */

@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.164
+ * Model version      : 1.200
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Sun Dec 06 06:07:25 2015
+ * C/C++ source code generated on  : Thu Mar 03 17:19:19 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -50,10 +50,10 @@
 typedef struct {
   real_T IC[10];                       /* '<Root>/IC' */
   real_T IC2[14];                      /* '<Root>/IC2' */
-  real_T UnitDelay_DSTATE[4];          /* '<Root>/Unit Delay' */
-  real_T UnitDelay1_DSTATE[4];         /* '<Root>/Unit Delay1' */
+  real_T UD_DSTATE[3];                 /* '<S5>/UD' */
   real_T UnitDelay2_DSTATE[4];         /* '<Root>/Unit Delay2' */
   real_T ERR_INTEGRALE[4];             /* '<Root>/Data Store Memory13' */
+  real_T LOCK_MOTORS[4];               /* '<Root>/Data Store Memory16' */
   real_T ROLLOVER_FLAG[4];             /* '<Root>/Data Store Memory3' */
   real_T ANTI_ROLLOVER_CORRECTION;     /* '<Root>/Data Store Memory' */
   real_T PID_SATURATION_THRESHOLD;     /* '<Root>/Data Store Memory1' */
@@ -92,6 +92,13 @@ typedef struct {
   real_T angle[4];                     /* '<Root>/angle' */
   real_T pid_gian[6];                  /* '<Root>/pid_gian' */
   real_T actuator_ctrl_params[14];     /* '<Root>/actuator_ctrl_params' */
+  real_T roll_rate;                    /* '<Root>/roll_rate' */
+  real_T pitch_rate;                   /* '<Root>/pitch_rate' */
+  real_T yaw_rate;                     /* '<Root>/yaw_rate' */
+  real_T accelX;                       /* '<Root>/accelX' */
+  real_T accelY;                       /* '<Root>/accelY' */
+  real_T accelZ;                       /* '<Root>/accelZ' */
+  real_T xd[2];                        /* '<Root>/xd' */
 } ExtU_controller;
 
 /* External outputs (root outports fed by signals with auto storage) */
@@ -161,10 +168,8 @@ extern RT_MODEL_controller *const controller_M;
  * '<S2>'   : 'controller/func_actuator_controller'
  * '<S3>'   : 'controller/func_flight_controller'
  * '<S4>'   : 'controller/state estimator'
- * '<S5>'   : 'controller/state estimator/Difference'
- * '<S6>'   : 'controller/state estimator/Difference1'
- * '<S7>'   : 'controller/state estimator/Difference2'
- * '<S8>'   : 'controller/state estimator/func_state_estimator'
+ * '<S5>'   : 'controller/state estimator/Discrete Derivative'
+ * '<S6>'   : 'controller/state estimator/func_state_estimator'
  */
 #endif                                 /* RTW_HEADER_controller_h_ */
 

@@ -47,6 +47,7 @@ global MIN_DV_ANGLE_LEFT;
 global SAMPLING_INTERVAL;
 global ERR_INTEGRALE;
 global ANTI_WINDUP_THRESHOLD;
+global LOCK_MOTORS;
 
 Kp = [gain(1),0,0,0;...
       0, gain(1),0,0;...
@@ -86,8 +87,22 @@ min_angle = DEG2RAD*[MIN_RP_ANGLE_RIGHT,MIN_RP_ANGLE_LEFT,MIN_DV_ANGLE_RIGHT,MIN
 delta_max_angle = max_angle-min_angle;
 for i=1:4
     if((angle(i)>delta_max_angle(i))||(angle(i)<0))
-        u(i) = 0;
+        if (des_angle(i) < 0 || des_angle(i) > delta_max_angle(i))
+            u(i) = 0;
+        end
     end
 end
+
+% for i=1:4
+%     if(des_angle(i) > 0 && des_angle(i) < delta_max_angle(i))
+%         LOCK_MOTORS(i) = false;
+%     end
+% end
+
+% for i=1:4
+%     if(LOCK_MOTORS(i))
+%         u(i) = 0;
+%     end
+% end
 
 end
