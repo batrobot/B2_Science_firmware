@@ -435,7 +435,8 @@ void debug_bat_robot(void)
 		{
 			tune_servo_params = false;
 			tune_flight_ctrl_params = false;
-			calibrate_encs = true;		
+			calibrate_encs = true;
+			servo_num[0] = 0;
 			uint8_t i;
 			for (i = 0;i < 4;i++)
 			{
@@ -650,7 +651,7 @@ void debug_bat_robot(void)
 	}
 	else if (calibrate_encs)
 	{
-		servo_num[0] = 0;
+		//servo_num[0] = 0;
 
 		// Specify the servo 
 		if (strcmp(rcvbuff, "1") == 0)
