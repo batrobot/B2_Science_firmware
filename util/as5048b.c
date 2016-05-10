@@ -43,8 +43,8 @@ double		AS5048B_convertAngle(int unit, double angle);
 /* initialize externs vars */
 boolean_T TIME_OUT_ERR = false;
 boolean_T _clockWise = false;
-uint8_t _numEncoders = 4;
-uint8_t	_encAddressList[4] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_FACTORY};
+uint8_t _numEncoders = 5;
+uint8_t	_encAddressList[5] = {AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_A, AS5048B_ADDRESS_B, AS5048B_ADDRESS_FACTORY, AS5048B_ADDRESS_B};
 uint8_t _chipAddress = AS5048B_ADDRESS_FACTORY;
 
 /*******************************************************************************
@@ -125,7 +125,7 @@ void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag
 	uint8_t i;
 	uint8_t diagReg;
 	
-	for (i = 0;i < _numEncoders-1;i++)
+	for (i = 0;i < _numEncoders;i++)
 	{
 		_chipAddress = _encAddressList[i];	
 		angleReg[i] = AS5048B_angleRegR();
@@ -133,14 +133,15 @@ void AS5048B_readBodyAngles(uint16_t *angleReg, uint8_t *autoGain, uint8_t *diag
 		diag[i] = AS5048B_getDiagReg();
 		magnitude[i] = AS5048B_magnitudeR();
 		angle[i] = AS5048B_angleR(U_DEG, true);
+		if (i > 2)
+		{	// This is a hack, read encoder measurments from the other 2 Encoders from another I2C bus.
+			angleReg[i] = EXTRA_AS5048B_angleRegR();
+			autoGain[i] = EXTRA_AS5048B_getAutoGain();
+			diag[i] = EXTRA_AS5048B_getDiagReg();
+			magnitude[i] = EXTRA_AS5048B_magnitudeR();
+			angle[i] = EXTRA_AS5048B_angleR(U_DEG, true);
+		}
 	}
-	
-	_chipAddress = _encAddressList[i];		
-	angleReg[i] = EXTRA_AS5048B_angleRegR();
-	autoGain[i] = EXTRA_AS5048B_getAutoGain();
-	diag[i] = EXTRA_AS5048B_getDiagReg();
-	magnitude[i] = EXTRA_AS5048B_magnitudeR();
-	angle[i] = EXTRA_AS5048B_angleR(U_DEG, true);
 	
 }
 	

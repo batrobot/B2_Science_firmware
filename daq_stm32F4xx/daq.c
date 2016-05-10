@@ -2107,7 +2107,7 @@ void daq_step(void)
     daq_B.GPIO_Read5 = GPIO_ReadInputData(GPIOH);
 
     /* DigitalClock: '<S2>/Digital Clock' */
-    daq_Y.time = ((daq_M->Timing.clockTick0) * 0.002);
+    daq_Y.time = ((daq_M->Timing.clockTick0) * 0.01);
 
     /* S-Function Block: <S10>/USART_Send4 */
 

@@ -82,7 +82,7 @@
 #define PI 3.141592654
 #define DEG2RAD(x) x*PI/180
 #define RAD2DEG(x) x*180/PI
-#define TIME_OUT_DELAY 1000 // time out delay for I2C talks
+#define TIME_OUT_DELAY 500 // time out delay for I2C talks
 
 // Default addresses for AS5048B
 #define AS5048B_ADDRESS_FACTORY 0x80 // 10000 + ( A1 & A2 to GND)
@@ -128,7 +128,7 @@ extern boolean_T TIME_OUT_ERR;
 extern uint8_t _chipAddress;
 extern boolean_T _clockWise;
 extern uint8_t _numEncoders;
-extern uint8_t	_encAddressList[4];
+extern uint8_t	_encAddressList[5];
 
 
 /* routines */

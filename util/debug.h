@@ -40,7 +40,7 @@
 
 /* debuging defs */
 #define _REC_SD_CARD	// buffer data on SD card
-//#define _BLUETOOTH		// buffer data over bluetooth
+#define _BLUETOOTH		// buffer data over bluetooth
 
 
 /* Tuning increments */
@@ -51,8 +51,8 @@
 #define INC_POS_TOL				0.01
 #define INC_AWU					100
 #define INC_PWM_CMD				5
-#define INC_FLIGHT_PARAM		0.002
-#define INC_ANGLE_MAX_MIN		5
+#define INC_FLIGHT_PARAM		0.5
+#define INC_ANGLE_MAX_MIN		1
 
 /* global vars */
 

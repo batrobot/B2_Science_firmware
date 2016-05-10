@@ -64,7 +64,7 @@ boolean_T tune_flight_ctrl_params = false;
 boolean_T calibrate_encs = false;
 boolean_T save_param_on_SD = false;
 FATFS fs;
-FIL	data;							// File object 
+FIL	state, imu, ctrl, joints;							// File object 
 FIL	param;
 FRESULT	fresult;					// FatFs return code 
 FILINFO info;
@@ -90,11 +90,12 @@ double flight_param_inc = INC_FLIGHT_PARAM;
 double angle_max_min_inc = INC_ANGLE_MAX_MIN; 
 
 /* extern vars */
-extern uint16_t angleReg[4];
-extern uint8_t autoGain[4];
-extern uint8_t diag[4];
-extern uint16_t magnitude[4];
-extern double angle[4];
+extern uint16_t angleReg[5];
+extern uint8_t autoGain[5];
+extern uint8_t diag[5];
+extern uint16_t magnitude[5];
+extern double angle[5];
+extern uint8_T qfl;
 
 extern float yaw, pitch, roll;
 extern float accel[3];
@@ -216,31 +217,122 @@ void debug_write_params(void)
 * Data structure is as following:
 		// 1st col: time	2nd col: roll	3rd col: pitch	4th col: yaw	5th col: enc1	
 		// 6th col: enc2	7th col: enc3	8th col:enc4	9th col: u1	10th col: u2	11th col: u3	12th col: u4
+		// 13th col: X-rate 14th col: Y-rate	15th col: Z-rate	16th col: X-axccel	17th col: Y-accel	18th col: Z-accel
 *******************************************************************************/
 void debug_write_data(void)
 {
 		/* find the length of the datalog file */
-	fresult = f_stat("data.txt", &info);  
+	fresult = f_stat("state.txt", &info);  
  
-	sprintf(filename, "data.txt"); 
-	fresult = f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE);
+	sprintf(filename, "state.txt"); 
+	fresult = f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE);
 		
 	/* If the file existed seek to the end */
-	if (fresult == FR_OK) f_lseek(&data, info.fsize);
+	if (fresult == FR_OK) f_lseek(&state, info.fsize);
+		
+	//sprintf(buffstr,
+		//"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n",
+	sprintf(buffstr,
+		"%f \r\n",
+		controller_Y.time);
+		//controller_Y.x[0],
+		//controller_Y.x[1], 
+		//controller_Y.x[2],
+		//controller_Y.x[3],
+		//controller_Y.x[4], 
+		//controller_Y.x[5],
+		//controller_Y.x[6],
+		//controller_Y.x[7], 
+		//controller_Y.x[8],
+		//controller_Y.x[9],
+		//controller_Y.x[10], 
+		//controller_Y.x[11]);
+	fresult = f_write(&state, buffstr, strlen(buffstr), &bw);
+		
+	f_close(&state); 
+	
+	
+	/* find the length of the datalog file */
+	fresult = f_stat("imu.txt", &info);  
+ 
+	sprintf(filename, "imu.txt"); 
+	fresult = f_open(&imu, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		
+	/* If the file existed seek to the end */
+	if (fresult == FR_OK) f_lseek(&imu, info.fsize);
 		
 	sprintf(buffstr,
-		"%f, %f, %f, %f, %f, %f, %f, %f \r\n",
-		controller_Y.time,
-		controller_Y.q[0],
-		controller_Y.q[1], 
-		controller_Y.q[2],
-		controller_U.angle[0],
-		controller_U.angle[1],
-		controller_U.angle[2],
-		controller_U.angle[3]);
-	fresult = f_write(&data, buffstr, strlen(buffstr), &bw);
+		"%f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
+		roll,
+		pitch, 
+		yaw,
+		rates[0],
+		rates[1], 
+		rates[2],
+		accel[0],
+		accel[1], 
+		accel[2]);
+	fresult = f_write(&imu, buffstr, strlen(buffstr), &bw);
 		
-	f_close(&data); 
+	f_close(&imu); 
+	
+	
+	/* find the length of the datalog file */
+	fresult = f_stat("ctrl.txt", &info);  
+ 
+	sprintf(filename, "ctrl.txt"); 
+	fresult = f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		
+	/* If the file existed seek to the end */
+	if (fresult == FR_OK) f_lseek(&ctrl, info.fsize);
+		
+	sprintf(buffstr,
+		"%f, %f, %f, %f \r\n",
+		controller_Y.flight_ctrl[0],
+		controller_Y.flight_ctrl[1], 
+		controller_Y.flight_ctrl[2],
+		controller_Y.flight_ctrl[3]);
+	fresult = f_write(&ctrl, buffstr, strlen(buffstr), &bw);
+		
+	f_close(&ctrl);
+	
+	
+	/* find the length of the datalog file */
+	fresult = f_stat("joints.txt", &info);  
+ 
+	sprintf(filename, "joints.txt"); 
+	fresult = f_open(&joints, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		
+	/* If the file existed seek to the end */
+	if (fresult == FR_OK) f_lseek(&joints, info.fsize);
+		//
+	//sprintf(buffstr,
+		//"%f, %f, %f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
+	sprintf(buffstr,
+		"%f, %f, %f, %f, %u \r\n",
+		controller_Y.jointAngles[0],
+		controller_Y.jointAngles[1], 
+		controller_Y.jointAngles[2],
+		controller_Y.jointAngles[3],		
+		qfl); // TODO: by measuring magnitude of megnetic filed I ditect downstroke\upstroke
+		//controller_Y.servo_err[0],
+		//controller_Y.servo_err[1],
+		//controller_Y.servo_err[2],
+		//controller_Y.servo_err[3],
+		//controller_Y.servo_derr[0],
+		//controller_Y.servo_derr[1],
+		//controller_Y.servo_derr[2],
+		//controller_Y.servo_derr[3],
+		//controller_Y.servo_interr[0],
+		//controller_Y.servo_interr[1],
+		//controller_Y.servo_interr[2],
+		//controller_Y.servo_interr[3]); 
+	fresult = f_write(&joints, buffstr, strlen(buffstr), &bw);
+		
+	f_close(&joints);
+	
+	
+	
 }
 	
 /*******************************************************************************
@@ -256,21 +348,57 @@ void debug_initialize_files(void)
 	
 	/* Register work area to the default drive */
 	f_mount(0, &fs);
+	/* Save as data.txt file on SD card. */ 
+	sprintf(filename, "state.txt"); 
+	/* open file on SD card */
+	while (f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
+		;
+		/* write the header to file */
+	char *header = " state matrix: [t,qx,qy,qz,px,py,pz,dqx,dqy,dqz,dpx,dpy,dpz]. \r\n";
+	while (f_write(&state, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
+		;	
+		/* close file */
+	f_close(&state);
+
 	
 	/* Save as data.txt file on SD card. */ 
-	sprintf(filename, "data.txt"); 
-	
+	sprintf(filename, "imu.txt"); 
 	/* open file on SD card */
-	while (f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
+	while (f_open(&imu, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
 		;
-	
 		/* write the header to file */
-	char *header = "Hello World! This is B2 talking! I am saving data on SD card. \r\n";
-	while (f_write(&data, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
-		;	
-			
+	header = "AHRS and imu data: [qx,qy,qz,wx,wy,wz,accelX,accelY,accelZ] \r\n";
+	while (f_write(&imu, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
+		;			
 		/* close file */
-	f_close(&data);
+	f_close(&imu);
+	
+	
+	/* Save as data.txt file on SD card. */ 
+	sprintf(filename, "ctrl.txt"); 
+	/* open file on SD card */
+	while (f_open(&ctrl, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
+		;
+		/* write the header to file */
+	header = "Control action matrix: [ufo_R,ufo_L,ufe_R,ufe_L]. \r\n";
+	while (f_write(&ctrl, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
+		;	
+		/* close file */
+	f_close(&ctrl);
+	
+	
+	/* Save as data.txt file on SD card. */ 
+	sprintf(filename, "joints.txt"); 
+	/* open file on SD card */
+	while (f_open(&joints, filename, FA_OPEN_ALWAYS | FA_WRITE) != FR_OK)
+		;
+	/* write the header to file */
+	header = "Body joint angles: [qfo_R,qfo_L,qfe_R,qfe_L,qfl,errfo_R,errfo_L,errfe_R,errfe_L,derrfo_R,derrfo_L,derrfe_R,derrfe_L,intfo_R,intfo_L,intfe_R,intfe_L]. \r\n";
+	while (f_write(&joints, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
+		;			
+	/* close file */
+	f_close(&joints);
+	
 	
 	/* open file on SD card */
 	char *pch;
@@ -383,8 +511,8 @@ void debug_bat_robot(void)
 	{		
 		if (strcmp(rcvbuff, "h") == 0)
 		{
-			sprintf(sendbuff, "please type in: q(quit), h(help), r(RF), w(write SD), f(fl par), s(sens calib), c(ctrl), i(imu), m(magnet), e(enc), d(enc diag), 1, 2, 3, or 4 \r\n");
-			debug_printf(sendbuff, strlen(sendbuff));
+			//sprintf(sendbuff, "please type in: q(quit), h(help), r(RF), w(write SD), f(fl par), s(sens calib), c(ctrl), i(imu), m(magnet), e(enc), d(enc diag), 1, 2, 3, or 4 \r\n");
+			//debug_printf(sendbuff, strlen(sendbuff));
 		}
 		else if ((strcmp(rcvbuff, "1") == 0) || strcmp(rcvbuff, "2") == 0 || (strcmp(rcvbuff, "3") == 0) || strcmp(rcvbuff, "4") == 0 || strcmp(rcvbuff, "5") == 0)
 		{
@@ -461,12 +589,12 @@ void debug_bat_robot(void)
 		}
 		else if (strcmp(rcvbuff, "i") == 0)
 		{
-			sprintf(sendbuff, "roll = %f, pitch = %f, yaw = %f \r\n", controller_Y.q[0], controller_Y.q[1], controller_Y.q[2]);
+			sprintf(sendbuff, "roll = %f, pitch = %f, yaw = %f \r\n", controller_Y.x[0], controller_Y.x[1], controller_Y.x[2]);
 			debug_printf(sendbuff, strlen(sendbuff)); 	
 		}
 		else if (strcmp(rcvbuff, "g") == 0)
 		{
-			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", controller_Y.q[6], controller_Y.q[7], controller_Y.q[8]);
+			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", controller_Y.x[6], controller_Y.x[7], controller_Y.x[8]);
 			debug_printf(sendbuff, strlen(sendbuff)); 	
 		}
 		else if (strcmp(rcvbuff, "a") == 0)
@@ -476,17 +604,22 @@ void debug_bat_robot(void)
 		}
 		else if (strcmp(rcvbuff, "m") == 0)
 		{
-			sprintf(sendbuff, "mag1 = %d, mag2 = %d, mag3 = %d, mag4 = %d \r\n", autoGain[0], autoGain[1], autoGain[2], autoGain[3]);
+			sprintf(sendbuff, "mag1 = %d, mag2 = %d, mag3 = %d, mag4 = %d, mag5 = %d \r\n", autoGain[0], autoGain[1], autoGain[2], autoGain[3], autoGain[4]);
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 		else if (strcmp(rcvbuff, "e") == 0)
 		{
-			sprintf(sendbuff, "angle1 = %f, angle2 = %f, angle3 = %f,  angle4 = %f \r\n", controller_U.angle[0], controller_U.angle[1], controller_U.angle[2], controller_U.angle[3]);
+			sprintf(sendbuff, "angle1 = %f, angle2 = %f, angle3 = %f, angle4 = %f, angle5 = %f \r\n", angle[0], angle[1], angle[2], angle[3], angle[4]);
+			debug_printf(sendbuff, strlen(sendbuff));
+		}
+		else if (strcmp(rcvbuff, "j") == 0)
+		{
+			sprintf(sendbuff, "qRP_R = %f, qRP_L = %f, qDV_R = %f,  qDV_L = %f \r\n", controller_Y.jointAngles[0], controller_Y.jointAngles[1], controller_Y.jointAngles[2], controller_Y.jointAngles[3]);
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 		else if (strcmp(rcvbuff, "d") == 0)
 		{
-			sprintf(sendbuff, "Encdiag1 = %d, Encdiag2 = %d, Encdiag3 = %d,  Encdiag4 = %d \r\n", diag[0], diag[1], diag[2], diag[3]);
+			sprintf(sendbuff, "Encdiag1 = %d, Encdiag2 = %d, Encdiag3 = %d, Encdiag4 = %d, Encdiag5 = %d \r\n", diag[0], diag[1], diag[2], diag[3], diag[4]);
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 		else if (strcmp(rcvbuff, "r") == 0)

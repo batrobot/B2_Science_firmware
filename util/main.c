@@ -48,7 +48,7 @@
 #include "ff.h"
 
 /* DAQ and controller loop at this rate */
-#define SAMPLE_TIME 0.01
+#define SAMPLE_TIME 0.05
 
 /* this variable is used to create a time reference incremented by 1 mili-second */
 //#define SYSTEMTICK_PERIOD_MS 0.1
@@ -92,11 +92,12 @@ int16_T _pwm_pe6;
 SD_Error SD_err = SD_ERROR;
 
 /* Some vars to read encoders */
-uint16_t angleReg[4] = {0, 0, 0, 0};
-uint8_t autoGain[4] = {0, 0, 0, 0};
-uint8_t diag[4] = {0, 0, 0, 0};
-uint16_t magnitude[4] = {0, 0, 0, 0};
-double angle[4] = {0, 0, 0, 0}; 
+uint16_t angleReg[5] = {0, 0, 0, 0, 0};
+uint8_t autoGain[5] = {0, 0, 0, 0, 0};
+uint8_t diag[5] = {0, 0, 0, 0, 0};
+uint16_t magnitude[5] = {0, 0, 0, 0, 0};
+double angle[5] = {0, 0, 0, 0, 0}; 
+uint8_T qfl;
 	
 /* Some vars for vector nav measurments */
 VN100_SPI_Packet *packet;
@@ -135,17 +136,20 @@ void SysTick_Handler(void)
 
 	OverrunFlags[0] = true;
 	
-	/* read encoders */
+	/* ???? */
+	controller_U.event_based = false;		
+	
+	///* read encoders */
 	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	
 	/* vn100 read yaw, pitch, and roll [deg] */
 	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
 	
 	/* read accel [m/s^2] */
-	//packet = VN100_SPI_GetAcc(0, accel);
+	packet = VN100_SPI_GetAcc(0, accel);
 	
 	/* read rate gyros [rad/s] */
-	//packet = VN100_SPI_GetRates(0, rates);
+	packet = VN100_SPI_GetRates(0, rates);
 	
 	/* inpute to controller here */
 	controller_U.pid_gian[0]; // forelimb Kp 
@@ -155,8 +159,8 @@ void SysTick_Handler(void)
 	controller_U.pid_gian[4]; // forelimb Ki 
 	controller_U.pid_gian[5]; // leg Ki 
 	controller_U.actuator_ctrl_params[0] = 100; // PID_SATURATION_THRESHOLD [pwm] (control sat, used in pid func)
-	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg\sec] (used in anti-roll-over func)
-	controller_U.actuator_ctrl_params[2] = 360; // ANTI_ROLLOVER_CORRECTION [deg] (used in anti-roll-over func)
+	controller_U.actuator_ctrl_params[1] = 20; // MAX_ANGLE_DIFFERENCE [deg/sample] (Ignore if encoder measurments/sample are larger than this.)
+	controller_U.actuator_ctrl_params[2] = 360; // ??? N.A.
 	controller_U.actuator_ctrl_params[3]; // MAX_RP_ANGLE_RIGHT [deg] 
 	controller_U.actuator_ctrl_params[4]; // MAX_DV_ANGLE_RIGHT [deg]
 	controller_U.actuator_ctrl_params[5]; // MIN_RP_ANGLE_RIGHT [deg]
@@ -182,49 +186,31 @@ void SysTick_Handler(void)
 	
 	
 	double desired_roll = (daq_Y.dc2 - 7700) / 3000;
-	controller_U.xd[0] = desired_roll;  // desired roll angle [deg]
+	controller_U.xd[0];  // desired roll angle [deg]
 	controller_U.xd[1];  // desired pitch angle [deg]
 	
 	// IMU
-	if (isnan(roll))
-	{
-		controller_U.roll = 0;
-	}
-	else
-	{
-		controller_U.roll = roll;
-	}
-
-	if (isnan(pitch))
-	{
-		controller_U.pitch = 0;
-	}
-	else
-	{
-		controller_U.pitch = pitch;
-	}
-	
-	if (isnan(yaw))
-	{
-		controller_U.yaw = 0;
-	}
-	else
-	{
-		controller_U.yaw = yaw;
-	}
-	
-	controller_U.roll_rate = rates[0];
-	controller_U.pitch_rate = rates[1];
-	controller_U.yaw_rate = rates[2];
+	controller_U.roll = roll;
+	controller_U.pitch = pitch;
+	controller_U.yaw = yaw;
+	controller_U.wx = rates[0];
+	controller_U.wy = rates[1];
+	controller_U.wz = rates[2];
 	controller_U.accelX = accel[0];
 	controller_U.accelY = accel[1];
 	controller_U.accelZ = accel[2];
 	
 	// Encoders
-	controller_U.angle[0] = angle[0]; // Right forelimb
+	//controller_U.angle[0] = angle[0]; // Right forelimb
+	//controller_U.angle[1] = angle[3]; // Left forelimb
+	//controller_U.angle[2] = angle[2]; // Right tail
+	//controller_U.angle[3] = angle[1]; // Left tail
+	
+	controller_U.angle[0] = angle[1]; // Right forelimb
 	controller_U.angle[1] = angle[3]; // Left forelimb
-	controller_U.angle[2] = angle[2]; // Right tail
-	controller_U.angle[3] = angle[1]; // Left tail 
+	controller_U.angle[2] = angle[0]; // Right tail
+	controller_U.angle[3] = angle[2]; // Left tail 
+	qfl = autoGain[4];	// Used to detect the onset of upstroke
 	
 	/* Step the controller for base rate */
 	controller_step();
@@ -290,9 +276,9 @@ void SysTick_Handler(void)
 	}
 	
 	
-	/* TMS320 commands*/
-	_pwm_pe5 = controller_Y.ubldc[0];	// right armwing
-	_pwm_pe6 = controller_Y.ubldc[1];	// left armwing
+	///* TMS320 commands*/
+	//_pwm_pe5 = controller_Y.ubldc[0];	// right armwing
+	//_pwm_pe6 = controller_Y.ubldc[1];	// left armwing
 	
 	
 	/* Step the model for base rate */
@@ -411,6 +397,15 @@ int main (void)
 	/* Real time from systickHandler */
 	while (1) 
 	{	
+		///* read accel [m/s^2] */
+		//packet = VN100_SPI_GetAcc(0, accel);
+		//main_delay_ms(10);
+	//
+		///* read rate gyros [rad/s] */
+		//packet = VN100_SPI_GetRates(0, rates);
+		
+		/* read encoders */
+		//AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	}	
 }
 

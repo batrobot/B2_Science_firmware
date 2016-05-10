@@ -81,7 +81,9 @@ VN100_SPI_Packet* VN100_SPI_ReadRegister(unsigned char sensorID, unsigned char r
   /* Pull SS line high to end SPI transaction */
   VN_SPI_SetSS(sensorID, VN_PIN_HIGH);  
 
-
+  /* Delay for 50us */
+	VN_Delay(100);
+	
   /* Return Error code */
   return &VN_SPI_LastReceivedPacket;  
 }

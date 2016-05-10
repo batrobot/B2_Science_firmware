@@ -3,10 +3,10 @@
  *
  * Code generated for Simulink model :controller.
  *
- * Model version      : 1.200
+ * Model version      : 1.334
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Thu Mar 03 17:19:19 2016
+ * C/C++ source code generated on  : Mon May 09 21:55:17 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -50,10 +50,15 @@
 typedef struct {
   real_T IC[10];                       /* '<Root>/IC' */
   real_T IC2[14];                      /* '<Root>/IC2' */
-  real_T UD_DSTATE[3];                 /* '<S5>/UD' */
+  real_T UnitDelay3_DSTATE[3];         /* '<S10>/Unit Delay3' */
+  real_T UnitDelay1_DSTATE[3];         /* '<S10>/Unit Delay1' */
+  real_T UnitDelay3_DSTATE_b[4];       /* '<S1>/Unit Delay3' */
   real_T UnitDelay2_DSTATE[4];         /* '<Root>/Unit Delay2' */
   real_T ERR_INTEGRALE[4];             /* '<Root>/Data Store Memory13' */
   real_T LOCK_MOTORS[4];               /* '<Root>/Data Store Memory16' */
+  real_T Pos[3];                       /* '<Root>/Data Store Memory17' */
+  real_T vel[3];                       /* '<Root>/Data Store Memory18' */
+  real_T ROLLOVER_ACTIVATE[2];         /* '<Root>/Data Store Memory19' */
   real_T ROLLOVER_FLAG[4];             /* '<Root>/Data Store Memory3' */
   real_T ANTI_ROLLOVER_CORRECTION;     /* '<Root>/Data Store Memory' */
   real_T PID_SATURATION_THRESHOLD;     /* '<Root>/Data Store Memory1' */
@@ -92,18 +97,19 @@ typedef struct {
   real_T angle[4];                     /* '<Root>/angle' */
   real_T pid_gian[6];                  /* '<Root>/pid_gian' */
   real_T actuator_ctrl_params[14];     /* '<Root>/actuator_ctrl_params' */
-  real_T roll_rate;                    /* '<Root>/roll_rate' */
-  real_T pitch_rate;                   /* '<Root>/pitch_rate' */
-  real_T yaw_rate;                     /* '<Root>/yaw_rate' */
+  real_T wx;                           /* '<Root>/wx' */
+  real_T wy;                           /* '<Root>/wy' */
+  real_T wz;                           /* '<Root>/wz' */
   real_T accelX;                       /* '<Root>/accelX' */
   real_T accelY;                       /* '<Root>/accelY' */
   real_T accelZ;                       /* '<Root>/accelZ' */
   real_T xd[2];                        /* '<Root>/xd' */
+  boolean_T event_based;               /* '<Root>/event_based' */
 } ExtU_controller;
 
 /* External outputs (root outports fed by signals with auto storage) */
 typedef struct {
-  real_T q[12];                        /* '<Root>/q' */
+  real_T x[12];                        /* '<Root>/x' */
   real_T flight_ctrl[4];               /* '<Root>/flight_ctrl' */
   real_T M0A;                          /* '<Root>/M0A' */
   real_T M0B;                          /* '<Root>/M0B' */
@@ -115,7 +121,13 @@ typedef struct {
   real_T M3B;                          /* '<Root>/M3B' */
   real_T debug[4];                     /* '<Root>/debug' */
   real_T time;                         /* '<Root>/time' */
-  real_T ubldc[4];                     /* '<Root>/ubldc' */
+  real_T jointAngles[4];               /* '<Root>/jointAngles' */
+  real_T servo_derr[4];                /* '<Root>/servo_derr' */
+  real_T servo_interr[4];              /* '<Root>/servo_interr' */
+  real_T servo_err[4];                 /* '<Root>/servo_err' */
+  real_T flight_ctrl1[16];             /* '<Root>/flight_ctrl1' */
+  real_T flight_ctrl2[16];             /* '<Root>/flight_ctrl2' */
+  real_T flight_ctrl3[12];             /* '<Root>/flight_ctrl3' */
 } ExtY_controller;
 
 /* Real-time Model Data Structure */
@@ -164,12 +176,18 @@ extern RT_MODEL_controller *const controller_M;
  * Here is the system hierarchy for this model
  *
  * '<Root>' : 'controller'
- * '<S1>'   : 'controller/fcn_timer'
- * '<S2>'   : 'controller/func_actuator_controller'
- * '<S3>'   : 'controller/func_flight_controller'
- * '<S4>'   : 'controller/state estimator'
- * '<S5>'   : 'controller/state estimator/Discrete Derivative'
- * '<S6>'   : 'controller/state estimator/func_state_estimator'
+ * '<S1>'   : 'controller/aro'
+ * '<S2>'   : 'controller/comput parameters for  event-based controller'
+ * '<S3>'   : 'controller/fcn_timer'
+ * '<S4>'   : 'controller/func_actuator_controller'
+ * '<S5>'   : 'controller/func_flight_controller'
+ * '<S6>'   : 'controller/gain-ramp'
+ * '<S7>'   : 'controller/state estimator'
+ * '<S8>'   : 'controller/aro/aro'
+ * '<S9>'   : 'controller/aro/normalize angle'
+ * '<S10>'  : 'controller/state estimator/aro'
+ * '<S11>'  : 'controller/state estimator/func_state_estimator'
+ * '<S12>'  : 'controller/state estimator/aro/aro'
  */
 #endif                                 /* RTW_HEADER_controller_h_ */
 
