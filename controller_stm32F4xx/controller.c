@@ -1305,7 +1305,7 @@ void controller_step(void)
   controller_Y.M3B = rtb_us[7];
 
   /* DigitalClock: '<Root>/Digital Clock' */
-  rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.002);
+  rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.01);
 
   /* MATLAB Function: '<Root>/fcn_timer' */
   /* MATLAB Function 'fcn_timer': '<S1>:1' */

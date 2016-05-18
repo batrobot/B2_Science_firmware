@@ -136,15 +136,15 @@ void SysTick_Handler(void)
 	OverrunFlags[0] = true;
 	
 	/* read encoders */
-	AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
+	//AS5048B_readBodyAngles(angleReg, autoGain, diag, magnitude, angle);
 	
-	/* vn100 read yaw, pitch, and roll [deg] */
-	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
-	
-	/* read accel [m/s^2] */
+	///* vn100 read yaw, pitch, and roll [deg] */
+	//packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+	//
+	///* read accel [m/s^2] */
 	//packet = VN100_SPI_GetAcc(0, accel);
-	
-	/* read rate gyros [rad/s] */
+	//
+	///* read rate gyros [rad/s] */
 	//packet = VN100_SPI_GetRates(0, rates);
 	
 	/* inpute to controller here */
@@ -184,7 +184,7 @@ void SysTick_Handler(void)
 	double desired_roll = (daq_Y.dc2 - 7700) / 3000;
 	controller_U.xd[0] = desired_roll;  // desired roll angle [deg]
 	controller_U.xd[1];  // desired pitch angle [deg]
-	
+	//
 	// IMU
 	if (isnan(roll))
 	{
@@ -219,16 +219,16 @@ void SysTick_Handler(void)
 	controller_U.accelX = accel[0];
 	controller_U.accelY = accel[1];
 	controller_U.accelZ = accel[2];
-	
-	// Encoders
+	//
+	//// Encoders
 	controller_U.angle[0] = angle[0]; // Right forelimb
 	controller_U.angle[1] = angle[3]; // Left forelimb
 	controller_U.angle[2] = angle[2]; // Right tail
 	controller_U.angle[3] = angle[1]; // Left tail 
-	
+	//
 	/* Step the controller for base rate */
 	controller_step();
-		
+		//
 	/* drv8835 commands */
 	if (!calibrate_encs)
 	{
@@ -297,7 +297,7 @@ void SysTick_Handler(void)
 	
 	/* Step the model for base rate */
 	daq_step();
-	INTERFACE_BOARD_pwmGenerator();
+	//INTERFACE_BOARD_pwmGenerator();
 	
 #ifdef _REC_SD_CARD
 	if (SD_err == SD_OK)
@@ -308,7 +308,7 @@ void SysTick_Handler(void)
 		debug_write_data();
 		
 		/* Write control param on SD */
-		debug_write_params();		
+		//debug_write_params();		
 		
 		/////////////////////////////// buffer data on SD card  ///////////////////////////////////	
 	}
@@ -364,7 +364,7 @@ int main (void)
 
 	/* Model initialization call */
 	daq_initialize();
-	INTERFACE_BOARD_initialize();
+	//INTERFACE_BOARD_initialize();
 	
 	/* vn100 spi initialization */
 	SPI_initialize();	
@@ -376,7 +376,7 @@ int main (void)
 	controller_initialize();
 	
 	/* initialize encoders */
-	AS5048B_initialize();
+	//AS5048B_initialize();
 	
 #ifdef _REC_SD_CARD
 	
@@ -411,6 +411,17 @@ int main (void)
 	/* Real time from systickHandler */
 	while (1) 
 	{	
+		/* vn100 read yaw, pitch, and roll [deg] */
+		packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
+		main_delay_us(100);
+		
+		/* read accel [m/s^2] */
+		packet = VN100_SPI_GetAcc(0, accel);
+		main_delay_us(100);
+			
+		/* read rate gyros [rad/s] */
+		packet = VN100_SPI_GetRates(0, rates);		
+		main_delay_us(100);
 	}	
 }
 

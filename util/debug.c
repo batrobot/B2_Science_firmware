@@ -226,21 +226,28 @@ void debug_write_data(void)
 	fresult = f_open(&data, filename, FA_OPEN_ALWAYS | FA_WRITE);
 		
 	/* If the file existed seek to the end */
-	if (fresult == FR_OK) f_lseek(&data, info.fsize);
-		
-	sprintf(buffstr,
-		"%f, %f, %f, %f, %f, %f, %f, %f \r\n",
-		controller_Y.time,
-		controller_Y.q[0],
-		controller_Y.q[1], 
-		controller_Y.q[2],
-		controller_U.angle[0],
-		controller_U.angle[1],
-		controller_U.angle[2],
-		controller_U.angle[3]);
-	fresult = f_write(&data, buffstr, strlen(buffstr), &bw);
-		
-	f_close(&data); 
+	if (fresult != FR_OK) 
+	{
+		f_close(&data); 
+	} 
+	else
+	{
+		f_lseek(&data, info.fsize);
+		sprintf(buffstr,
+			"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
+			controller_Y.time,
+			roll,
+			pitch, 
+			yaw,
+			rates[0],
+			rates[1],
+			rates[2],
+			accel[0],
+			accel[1],
+			accel[2]);
+		fresult = f_write(&data, buffstr, strlen(buffstr), &bw);
+		f_close(&data); 
+	}
 }
 	
 /*******************************************************************************
@@ -265,68 +272,68 @@ void debug_initialize_files(void)
 		;
 	
 		/* write the header to file */
-	char *header = "Hello World! This is B2 talking! I am saving data on SD card. \r\n";
+	char *header = "Hello! This is BMU talking! I am saved data on SD card. \r\n";
 	while (f_write(&data, header, strlen(header), &bw) != FR_OK)	// Write data to the file 
 		;	
 			
 		/* close file */
 	f_close(&data);
 	
-	/* open file on SD card */
-	char *pch;
-	float var, varVector[30];
-	uint8_T index = 0;
-		
-	/* Read param.txt file on SD card. */ 
-	sprintf(filename, "param.txt"); 
-	if (f_open(&param, filename, FA_READ) == FR_OK)
-	{
-		/* Read param line */
-		f_gets(line, sizeof line, &param);
-		pch = strtok(line, " ,");
-		while (pch != NULL)
-		{
-			sscanf(pch, "%f", &var);
-			pch = strtok(NULL, " ,");
-			varVector[index] = var;
-			index++;
-		}
-		
-	/* Write servo params */
-		for (index = 0;index < 6;index++)
-		{
-			controller_U.pid_gian[index] = varVector[index];
-		}
-		for (index = 0;index < 14;index++)
-		{
-			controller_U.actuator_ctrl_params[index] = varVector[index + 6];
-		}
-		/* Write fligth control params */
-		for (index = 0;index < 10;index++)
-		{
-			controller_U.flight_ctrl_params[index] = varVector[index + 20];
-		}
-	}
-	else
-	{
-		/* Write servo params */
-		for (index = 0;index < 6;index++)
-		{
-			controller_U.pid_gian[index] = 0;
-		}
-		for (index = 0;index < 14;index++)
-		{
-			controller_U.actuator_ctrl_params[index] = 0;
-		}
-		/* Write fligth control params */
-		for (index = 0;index < 10;index++)
-		{
-			controller_U.flight_ctrl_params[index] = 0;
-		}
-	}
-			
-	/* Close the file */
-	f_close(&param);
+	///* open file on SD card */
+	//char *pch;
+	//float var, varVector[30];
+	//uint8_T index = 0;
+		//
+	///* Read param.txt file on SD card. */ 
+	//sprintf(filename, "param.txt"); 
+	//if (f_open(&param, filename, FA_READ) == FR_OK)
+	//{
+		///* Read param line */
+		//f_gets(line, sizeof line, &param);
+		//pch = strtok(line, " ,");
+		//while (pch != NULL)
+		//{
+			//sscanf(pch, "%f", &var);
+			//pch = strtok(NULL, " ,");
+			//varVector[index] = var;
+			//index++;
+		//}
+		//
+	///* Write servo params */
+		//for (index = 0;index < 6;index++)
+		//{
+			//controller_U.pid_gian[index] = varVector[index];
+		//}
+		//for (index = 0;index < 14;index++)
+		//{
+			//controller_U.actuator_ctrl_params[index] = varVector[index + 6];
+		//}
+		///* Write fligth control params */
+		//for (index = 0;index < 10;index++)
+		//{
+			//controller_U.flight_ctrl_params[index] = varVector[index + 20];
+		//}
+	//}
+	//else
+	//{
+		///* Write servo params */
+		//for (index = 0;index < 6;index++)
+		//{
+			//controller_U.pid_gian[index] = 0;
+		//}
+		//for (index = 0;index < 14;index++)
+		//{
+			//controller_U.actuator_ctrl_params[index] = 0;
+		//}
+		///* Write fligth control params */
+		//for (index = 0;index < 10;index++)
+		//{
+			//controller_U.flight_ctrl_params[index] = 0;
+		//}
+	//}
+			//
+	///* Close the file */
+	//f_close(&param);
 		
 	/////////////////////////////// Make a quick header for SD log file ///////////////////////////////////	
 }
@@ -465,7 +472,7 @@ void debug_bat_robot(void)
 		}
 		else if (strcmp(rcvbuff, "g") == 0)
 		{
-			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", controller_Y.q[6], controller_Y.q[7], controller_Y.q[8]);
+			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", rates[0], rates[1], rates[2]);
 			debug_printf(sendbuff, strlen(sendbuff)); 	
 		}
 		else if (strcmp(rcvbuff, "a") == 0)
