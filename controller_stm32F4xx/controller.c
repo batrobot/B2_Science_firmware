@@ -6,7 +6,7 @@
  * Model version      : 1.334
  * Simulink Coder version    : 8.6 (R2014a) 27-Dec-2013
  * TLC version       : 8.6 (Jan 30 2014)
- * C/C++ source code generated on  : Mon May 09 21:55:17 2016
+ * C/C++ source code generated on  : Sat May 14 13:49:26 2016
  *
  * Target selection: stm32F4xx.tlc
  * Embedded hardware selection: STMicroelectronics->STM32F4xx 32-bit Cortex-M4
@@ -507,7 +507,7 @@ void controller_step(void)
   /* End of InitialCondition: '<Root>/IC' */
 
   /* DigitalClock: '<Root>/Digital Clock' */
-	rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.05);
+  rtb_DigitalClock = ((controller_M->Timing.clockTick0) * 0.01);
 
   /* MATLAB Function: '<Root>/fcn_timer' */
   /* MATLAB Function 'fcn_timer': '<S3>:1' */
@@ -1871,27 +1871,39 @@ void controller_step(void)
   if (fabs(err_idx_0) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
     u_pid[0] = 0.0;
+
+    /* 'func_map_pid_to_servo:54' ERR_INTEGRALE(i) = 0; */
+    controller_DW.ERR_INTEGRALE[0] = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
   if (fabs(err_idx_1) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
     u_pid[1] = 0.0;
+
+    /* 'func_map_pid_to_servo:54' ERR_INTEGRALE(i) = 0; */
+    controller_DW.ERR_INTEGRALE[1] = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
   if (fabs(err_idx_2) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
     u_pid[2] = 0.0;
+
+    /* 'func_map_pid_to_servo:54' ERR_INTEGRALE(i) = 0; */
+    controller_DW.ERR_INTEGRALE[2] = 0.0;
   }
 
   /* 'func_map_pid_to_servo:52' if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD */
   if (fabs(err_idx_3) < controller_DW.PID_TRACKING_PRECISION_THRESHOL) {
     /* 'func_map_pid_to_servo:53' u(i) = 0; */
     u_pid[3] = 0.0;
+
+    /* 'func_map_pid_to_servo:54' ERR_INTEGRALE(i) = 0; */
+    controller_DW.ERR_INTEGRALE[3] = 0.0;
   }
 
-  /* 'func_map_pid_to_servo:58' u_drv = H*abs(u); */
+  /* 'func_map_pid_to_servo:59' u_drv = H*abs(u); */
   fwd[0] = fabs(u_pid[0]);
   fwd[1] = fabs(u_pid[1]);
   fwd[2] = fabs(u_pid[2]);

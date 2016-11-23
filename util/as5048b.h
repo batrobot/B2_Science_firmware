@@ -128,7 +128,7 @@ extern boolean_T TIME_OUT_ERR;
 extern uint8_t _chipAddress;
 extern boolean_T _clockWise;
 extern uint8_t _numEncoders;
-extern uint8_t	_encAddressList[5];
+extern uint8_t	_encAddressList[2];
 
 
 /* routines */

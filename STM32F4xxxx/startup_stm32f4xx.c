@@ -238,7 +238,7 @@ void __attribute__((naked, noreturn)) Reset_Handler()
 	//asm ("ldr sp, =_estack");
 
 	void **pSource, **pDest;
-	for (pSource = &_sidata, pDest = &_sdata; pDest != &_edata; pSource++, pDest++)
+for (pSource = &_sidata, pDest = &_sdata; pDest != &_edata; pSource++, pDest++)
 		*pDest = *pSource;
 
 	for (pDest = &_sbss; pDest != &_ebss; pDest++)

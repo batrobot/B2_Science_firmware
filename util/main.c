@@ -48,7 +48,7 @@
 #include "ff.h"
 
 /* DAQ and controller loop at this rate */
-#define SAMPLE_TIME 0.05
+#define SAMPLE_TIME 0.01
 
 /* this variable is used to create a time reference incremented by 1 mili-second */
 //#define SYSTEMTICK_PERIOD_MS 0.1
@@ -146,10 +146,10 @@ void SysTick_Handler(void)
 	packet = VN100_SPI_GetYPR(0, &yaw, &pitch, &roll);
 	
 	/* read accel [m/s^2] */
-	packet = VN100_SPI_GetAcc(0, accel);
+	//packet = VN100_SPI_GetAcc(0, accel);
 	
 	/* read rate gyros [rad/s] */
-	packet = VN100_SPI_GetRates(0, rates);
+	//packet = VN100_SPI_GetRates(0, rates);
 	
 	/* inpute to controller here */
 	controller_U.pid_gian[0]; // forelimb Kp 

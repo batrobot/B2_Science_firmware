@@ -221,7 +221,116 @@ void debug_write_params(void)
 *******************************************************************************/
 void debug_write_data(void)
 {
-		/* find the length of the datalog file */
+		///* find the length of the datalog file */
+	//fresult = f_stat("state.txt", &info);  
+ //
+	//sprintf(filename, "state.txt"); 
+	//fresult = f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		//
+	///* If the file existed seek to the end */
+	//if (fresult == FR_OK) f_lseek(&state, info.fsize);
+		//
+	////sprintf(buffstr,
+		////"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n",
+	//sprintf(buffstr,
+		//"%f \r\n",
+		//controller_Y.time);
+		////controller_Y.x[0],
+		////controller_Y.x[1], 
+		////controller_Y.x[2],
+		////controller_Y.x[3],
+		////controller_Y.x[4], 
+		////controller_Y.x[5],
+		////controller_Y.x[6],
+		////controller_Y.x[7], 
+		////controller_Y.x[8],
+		////controller_Y.x[9],
+		////controller_Y.x[10], 
+		////controller_Y.x[11]);
+	//fresult = f_write(&state, buffstr, strlen(buffstr), &bw);
+		//
+	//f_close(&state); 
+	//
+	//
+	///* find the length of the datalog file */
+	//fresult = f_stat("imu.txt", &info);  
+ //
+	//sprintf(filename, "imu.txt"); 
+	//fresult = f_open(&imu, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		//
+	///* If the file existed seek to the end */
+	//if (fresult == FR_OK) f_lseek(&imu, info.fsize);
+		//
+	//sprintf(buffstr,
+		//"%f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
+		//roll,
+		//pitch, 
+		//yaw,
+		//rates[0],
+		//rates[1], 
+		//rates[2],
+		//accel[0],
+		//accel[1], 
+		//accel[2]);
+	//fresult = f_write(&imu, buffstr, strlen(buffstr), &bw);
+		//
+	//f_close(&imu); 
+	//
+	//
+	///* find the length of the datalog file */
+	//fresult = f_stat("ctrl.txt", &info);  
+ //
+	//sprintf(filename, "ctrl.txt"); 
+	//fresult = f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		//
+	///* If the file existed seek to the end */
+	//if (fresult == FR_OK) f_lseek(&ctrl, info.fsize);
+		//
+	//sprintf(buffstr,
+		//"%f, %f, %f, %f \r\n",
+		//controller_Y.flight_ctrl[0],
+		//controller_Y.flight_ctrl[1], 
+		//controller_Y.flight_ctrl[2],
+		//controller_Y.flight_ctrl[3]);
+	//fresult = f_write(&ctrl, buffstr, strlen(buffstr), &bw);
+		//
+	//f_close(&ctrl);
+	//
+	//
+	///* find the length of the datalog file */
+	//fresult = f_stat("joints.txt", &info);  
+ //
+	//sprintf(filename, "joints.txt"); 
+	//fresult = f_open(&joints, filename, FA_OPEN_ALWAYS | FA_WRITE);
+		//
+	///* If the file existed seek to the end */
+	//if (fresult == FR_OK) f_lseek(&joints, info.fsize);
+		////
+	////sprintf(buffstr,
+		////"%f, %f, %f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
+	//sprintf(buffstr,
+		//"%f, %f, %f, %f, %d \r\n",
+		//controller_Y.jointAngles[0],
+		//controller_Y.jointAngles[1], 
+		//controller_Y.jointAngles[2],
+		//controller_Y.jointAngles[3],		
+		//qfl); // TODO: by measuring magnitude of megnetic filed I ditect downstroke\upstroke
+		////controller_Y.servo_err[0],
+		////controller_Y.servo_err[1],
+		////controller_Y.servo_err[2],
+		////controller_Y.servo_err[3],
+		////controller_Y.servo_derr[0],
+		////controller_Y.servo_derr[1],
+		////controller_Y.servo_derr[2],
+		////controller_Y.servo_derr[3],
+		////controller_Y.servo_interr[0],
+		////controller_Y.servo_interr[1],
+		////controller_Y.servo_interr[2],
+		////controller_Y.servo_interr[3]); 
+	//fresult = f_write(&joints, buffstr, strlen(buffstr), &bw);
+		//
+	//f_close(&joints);
+	
 	fresult = f_stat("state.txt", &info);  
  
 	sprintf(filename, "state.txt"); 
@@ -233,105 +342,17 @@ void debug_write_data(void)
 	//sprintf(buffstr,
 		//"%f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\r\n",
 	sprintf(buffstr,
-		"%f \r\n",
-		controller_Y.time);
-		//controller_Y.x[0],
-		//controller_Y.x[1], 
-		//controller_Y.x[2],
-		//controller_Y.x[3],
-		//controller_Y.x[4], 
-		//controller_Y.x[5],
-		//controller_Y.x[6],
-		//controller_Y.x[7], 
-		//controller_Y.x[8],
-		//controller_Y.x[9],
-		//controller_Y.x[10], 
-		//controller_Y.x[11]);
+		"%f,%f,%f,%f,%f,%f \r\n",
+		controller_Y.time,
+		roll,
+		pitch,
+		yaw,
+		angle[0],
+		angle[1]);
+		
 	fresult = f_write(&state, buffstr, strlen(buffstr), &bw);
 		
 	f_close(&state); 
-	
-	
-	/* find the length of the datalog file */
-	fresult = f_stat("imu.txt", &info);  
- 
-	sprintf(filename, "imu.txt"); 
-	fresult = f_open(&imu, filename, FA_OPEN_ALWAYS | FA_WRITE);
-		
-	/* If the file existed seek to the end */
-	if (fresult == FR_OK) f_lseek(&imu, info.fsize);
-		
-	sprintf(buffstr,
-		"%f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
-		roll,
-		pitch, 
-		yaw,
-		rates[0],
-		rates[1], 
-		rates[2],
-		accel[0],
-		accel[1], 
-		accel[2]);
-	fresult = f_write(&imu, buffstr, strlen(buffstr), &bw);
-		
-	f_close(&imu); 
-	
-	
-	/* find the length of the datalog file */
-	fresult = f_stat("ctrl.txt", &info);  
- 
-	sprintf(filename, "ctrl.txt"); 
-	fresult = f_open(&state, filename, FA_OPEN_ALWAYS | FA_WRITE);
-		
-	/* If the file existed seek to the end */
-	if (fresult == FR_OK) f_lseek(&ctrl, info.fsize);
-		
-	sprintf(buffstr,
-		"%f, %f, %f, %f \r\n",
-		controller_Y.flight_ctrl[0],
-		controller_Y.flight_ctrl[1], 
-		controller_Y.flight_ctrl[2],
-		controller_Y.flight_ctrl[3]);
-	fresult = f_write(&ctrl, buffstr, strlen(buffstr), &bw);
-		
-	f_close(&ctrl);
-	
-	
-	/* find the length of the datalog file */
-	fresult = f_stat("joints.txt", &info);  
- 
-	sprintf(filename, "joints.txt"); 
-	fresult = f_open(&joints, filename, FA_OPEN_ALWAYS | FA_WRITE);
-		
-	/* If the file existed seek to the end */
-	if (fresult == FR_OK) f_lseek(&joints, info.fsize);
-		//
-	//sprintf(buffstr,
-		//"%f, %f, %f, %f, %i, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f \r\n",
-	sprintf(buffstr,
-		"%f, %f, %f, %f, %u \r\n",
-		controller_Y.jointAngles[0],
-		controller_Y.jointAngles[1], 
-		controller_Y.jointAngles[2],
-		controller_Y.jointAngles[3],		
-		qfl); // TODO: by measuring magnitude of megnetic filed I ditect downstroke\upstroke
-		//controller_Y.servo_err[0],
-		//controller_Y.servo_err[1],
-		//controller_Y.servo_err[2],
-		//controller_Y.servo_err[3],
-		//controller_Y.servo_derr[0],
-		//controller_Y.servo_derr[1],
-		//controller_Y.servo_derr[2],
-		//controller_Y.servo_derr[3],
-		//controller_Y.servo_interr[0],
-		//controller_Y.servo_interr[1],
-		//controller_Y.servo_interr[2],
-		//controller_Y.servo_interr[3]); 
-	fresult = f_write(&joints, buffstr, strlen(buffstr), &bw);
-		
-	f_close(&joints);
-	
-	
 	
 }
 	
@@ -589,12 +610,12 @@ void debug_bat_robot(void)
 		}
 		else if (strcmp(rcvbuff, "i") == 0)
 		{
-			sprintf(sendbuff, "roll = %f, pitch = %f, yaw = %f \r\n", controller_Y.x[0], controller_Y.x[1], controller_Y.x[2]);
+			sprintf(sendbuff, "roll = %f, pitch = %f, yaw = %f \r\n", roll, pitch, yaw);
 			debug_printf(sendbuff, strlen(sendbuff)); 	
 		}
 		else if (strcmp(rcvbuff, "g") == 0)
 		{
-			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", controller_Y.x[6], controller_Y.x[7], controller_Y.x[8]);
+			sprintf(sendbuff, "rateX = %f, rateY = %f, rateZ = %f \r\n", rates[0], rates[1], rates[2]);
 			debug_printf(sendbuff, strlen(sendbuff)); 	
 		}
 		else if (strcmp(rcvbuff, "a") == 0)
@@ -732,7 +753,7 @@ void debug_bat_robot(void)
 				controller_U.pid_gian[2 * 2 + servo_num[1]],
 				controller_U.flight_ctrl_params[6 + servo_num[0]],
 				controller_U.actuator_ctrl_params[12],
-				controller_Y.debug[3]);
+				controller_U.actuator_ctrl_params[13]);
 			debug_printf(sendbuff, strlen(sendbuff));
 		}
 	}

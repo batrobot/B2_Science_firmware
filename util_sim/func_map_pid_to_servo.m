@@ -23,7 +23,7 @@ H = zeros(8,4);
 % used for saturating control command to drv8835
 global PID_SATURATION_THRESHOLD;
 global PID_TRACKING_PRECISION_THRESHOLD;
-
+global ERR_INTEGRALE;
 
 % map
 H = [func_heaviside(u(1)),0,0,0;...
@@ -51,6 +51,7 @@ end
 for i=1:4
     if abs(error(i))<PID_TRACKING_PRECISION_THRESHOLD
         u(i) = 0;
+        ERR_INTEGRALE(i) = 0;
     end
 end
 

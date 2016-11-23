@@ -40,13 +40,13 @@
 
 /* debuging defs */
 #define _REC_SD_CARD	// buffer data on SD card
-#define _BLUETOOTH		// buffer data over bluetooth
+//#define _BLUETOOTH		// buffer data over bluetooth
 
 
 /* Tuning increments */
 #define INC_KP					10.0
 #define INC_KD					0.1
-#define INC_KI					0.1
+#define INC_KI					5.0
 #define INC_POS					10
 #define INC_POS_TOL				0.01
 #define INC_AWU					100
